@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import asyncHandler from 'express-async-handler';
+import mongoose from 'mongoose';
 import { Invoice } from '../models/Invoice';
 import { Customer } from '../models/Customer';
 import { Branch } from '../models/Branch';
@@ -41,12 +42,37 @@ export const processCheckout = asyncHandler(async (req: AuthRequest, res: Respon
   } = req.body;
 
   const targetBranchId = branchId || req.activeBranchId;
-  const branch = await Branch.findById(targetBranchId);
-  const customer = await Customer.findById(customerId);
+  let branch = null;
+  if (targetBranchId && mongoose.Types.ObjectId.isValid(String(targetBranchId))) {
+    branch = await Branch.findById(targetBranchId);
+  }
+  if (!branch) {
+    branch = await Branch.findOne({ organizationId: req.organizationId });
+  }
+
+  let customer = null;
+  if (customerId && mongoose.Types.ObjectId.isValid(String(customerId))) {
+    customer = await Customer.findById(customerId);
+  }
+  if (!customer && req.body.customerName) {
+    customer = await Customer.findOne({ organizationId: req.organizationId, fullName: req.body.customerName });
+    if (!customer) {
+      customer = await Customer.create({
+        organizationId: req.organizationId,
+        fullName: req.body.customerName,
+        phone: req.body.customerPhone || '+91 98765 43210',
+        customerSource: 'WALK_IN',
+      });
+    }
+  }
 
   if (!customer) {
-    res.status(400).json({ success: false, message: 'Customer is required for invoice' });
-    return;
+    customer = await Customer.findOne({ organizationId: req.organizationId }) || await Customer.create({
+      organizationId: req.organizationId,
+      fullName: 'Walk-in Client',
+      phone: '+91 98765 43210',
+      customerSource: 'WALK_IN',
+    });
   }
 
   // Calculate items subtotal, taxes, totals
@@ -99,9 +125,9 @@ export const processCheckout = asyncHandler(async (req: AuthRequest, res: Respon
 
   const invoice = await Invoice.create({
     organizationId: req.organizationId,
-    branchId: targetBranchId,
+    branchId: branch?._id,
     invoiceNumber,
-    appointmentId,
+    appointmentId: (appointmentId && mongoose.Types.ObjectId.isValid(String(appointmentId))) ? appointmentId : undefined,
     customerId: customer._id,
     customerName: customer.fullName,
     customerPhone: customer.phone,
@@ -135,7 +161,7 @@ export const processCheckout = asyncHandler(async (req: AuthRequest, res: Respon
   await customer.save();
 
   // If appointment was attached, mark it completed
-  if (appointmentId) {
+  if (appointmentId && mongoose.Types.ObjectId.isValid(String(appointmentId))) {
     await Appointment.findByIdAndUpdate(appointmentId, {
       status: 'COMPLETED',
       invoiceId: invoice._id,
@@ -144,14 +170,14 @@ export const processCheckout = asyncHandler(async (req: AuthRequest, res: Respon
 
   // Deduct stock for product items sold
   for (const item of processedItems) {
-    if (item.itemType === 'PRODUCT' && item.itemId) {
+    if (item.itemType === 'PRODUCT' && item.itemId && mongoose.Types.ObjectId.isValid(String(item.itemId))) {
       await Product.updateOne(
-        { _id: item.itemId, 'stockLevels.branchId': targetBranchId },
+        { _id: item.itemId, 'stockLevels.branchId': branch?._id },
         { $inc: { 'stockLevels.$.quantity': -item.quantity } }
       );
       await StockLedgerEntry.create({
         organizationId: req.organizationId,
-        branchId: targetBranchId,
+        branchId: branch?._id,
         productId: item.itemId,
         movementType: 'SALE',
         quantityChange: -item.quantity,

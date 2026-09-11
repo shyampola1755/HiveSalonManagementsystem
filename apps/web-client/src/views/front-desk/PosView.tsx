@@ -94,20 +94,17 @@ export const PosView: React.FC = () => {
     fetchCatalog();
   }, [activeTab, activeBranchId]);
 
-  // Customer search
-  const handleSearchCustomers = async (query: string) => {
+  // Customer search & initial load
+  const handleSearchCustomers = async (query = '') => {
     setCustomerSearch(query);
-    if (!query) {
-      setCustomersList([]);
-      return;
-    }
     try {
-      const res = await apiClient.get(`/customers?search=${encodeURIComponent(query)}`);
-      const getArray = (res: any) => {
-        if (!res) return [];
-        if (Array.isArray(res.data?.data)) return res.data.data;
-        if (Array.isArray(res.data)) return res.data;
-        if (Array.isArray(res.data?.data?.data)) return res.data.data.data;
+      const endpoint = query.trim() ? `/customers?search=${encodeURIComponent(query.trim())}` : '/customers?limit=50';
+      const res = await apiClient.get(endpoint);
+      const getArray = (r: any) => {
+        if (!r) return [];
+        if (Array.isArray(r.data?.data)) return r.data.data;
+        if (Array.isArray(r.data)) return r.data;
+        if (Array.isArray(r.data?.data?.data)) return r.data.data.data;
         return [];
       };
       setCustomersList(getArray(res));
@@ -115,6 +112,10 @@ export const PosView: React.FC = () => {
       console.error(e);
     }
   };
+
+  useEffect(() => {
+    handleSearchCustomers('');
+  }, [activeBranchId]);
 
   // Filter items by category & search
   const filteredItems = catalogItems.filter((item) => {
@@ -142,7 +143,9 @@ export const PosView: React.FC = () => {
     setIsProcessing(true);
     try {
       const payload = {
-        customerId: customer.id,
+        customerId: customer.id || (customer as any)._id,
+        customerName: customer.fullName,
+        customerPhone: customer.phone,
         branchId: activeBranchId,
         items: items.map((i) => ({
           itemType: i.itemType,
@@ -154,9 +157,14 @@ export const PosView: React.FC = () => {
           staffId: i.staffId,
           staffName: i.staffName,
         })),
+        subtotal,
         discountType,
         discountValue,
+        discountAmount,
+        taxAmount,
         tipAmount,
+        totalAmount: grandTotal,
+        grandTotal,
         payments: [{ method: paymentMethod, amount: grandTotal }],
       };
 

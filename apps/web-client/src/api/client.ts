@@ -206,6 +206,54 @@ const INITIAL_ORDERS = [
   { _id: 'ord-2', orderNumber: 'ORD-MUM-01-923145', branchName: 'Mumbai Salon & Spa (Bandra West)', requestedByUserName: 'Rohan Joshi', status: 'DISPATCHED', createdAt: new Date().toISOString(), items: [{ productName: 'Kérastase Elixir Ultime L\'Huile Originale (100ml)', requestedQuantity: 10, dispatchedQuantity: 10 }] },
 ];
 
+const INITIAL_INVOICES = [
+  {
+    _id: 'inv-1',
+    id: 'inv-1',
+    invoiceNumber: 'INV-HYD-01-893120',
+    customerName: 'Aarav Singhania',
+    customerPhone: '+91 98765 43210',
+    totalAmount: 6500,
+    subtotal: 5508,
+    taxAmount: 992,
+    discountAmount: 0,
+    paymentStatus: 'PAID',
+    payments: [{ method: 'UPI', amount: 6500 }],
+    items: [{ name: 'French Balayage & Glossing', itemType: 'SERVICE', quantity: 1, unitPrice: 6500 }],
+    createdAt: new Date().toISOString(),
+  },
+  {
+    _id: 'inv-2',
+    id: 'inv-2',
+    invoiceNumber: 'INV-HYD-01-893121',
+    customerName: 'Deepika Padukone',
+    customerPhone: '+91 98222 11334',
+    totalAmount: 5500,
+    subtotal: 4661,
+    taxAmount: 839,
+    discountAmount: 0,
+    paymentStatus: 'PAID',
+    payments: [{ method: 'CARD', amount: 5500 }],
+    items: [{ name: 'HydraFacial MD Platinum Rejuvenation', itemType: 'SERVICE', quantity: 1, unitPrice: 5500 }],
+    createdAt: new Date().toISOString(),
+  },
+  {
+    _id: 'inv-3',
+    id: 'inv-3',
+    invoiceNumber: 'INV-HYD-01-893122',
+    customerName: 'Rohan Mehra',
+    customerPhone: '+91 91234 56789',
+    totalAmount: 1500,
+    subtotal: 1271,
+    taxAmount: 229,
+    discountAmount: 0,
+    paymentStatus: 'PAID',
+    payments: [{ method: 'CASH', amount: 1500 }],
+    items: [{ name: 'Precision Director Haircut', itemType: 'SERVICE', quantity: 1, unitPrice: 1500 }],
+    createdAt: new Date().toISOString(),
+  },
+];
+
 // Helper to access and persist stateful mock collections
 const getStorageList = (key: string, defaultData: any[]): any[] => {
   try {
@@ -235,8 +283,17 @@ apiClient.interceptors.request.use((config) => {
   }
 
   const activeBranchId = localStorage.getItem('hive_active_branch');
-  if (activeBranchId) {
-    config.headers['x-branch-id'] = activeBranchId;
+  if (activeBranchId && typeof activeBranchId === 'string') {
+    let cleanId = activeBranchId.trim();
+    if (cleanId.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(cleanId);
+        cleanId = parsed._id || parsed.id || '';
+      } catch (e) {}
+    }
+    if (cleanId && cleanId !== '[object Object]') {
+      config.headers['x-branch-id'] = cleanId;
+    }
   }
 
   return config;
@@ -706,26 +763,51 @@ apiClient.interceptors.response.use(
       };
     }
 
-    // 11. Reports & Dashboard
+    // 11. Reports & Dashboard (Dynamic Reactive Metrics based on Invoices, Appts & CRM)
     if (url.includes('/reports/dashboard')) {
-      const custCount = getStorageList('customers', INITIAL_CUSTOMERS).length;
+      const customers = getStorageList('customers', INITIAL_CUSTOMERS);
+      const invoices = getStorageList('invoices', INITIAL_INVOICES);
+      const appts = getStorageList('appointments', INITIAL_APPOINTMENTS);
+      const expenses = getStorageList('expenses', [{ _id: 'exp-1', category: 'Products & Supplies', amount: 4200, date: new Date().toISOString(), status: 'APPROVED' }]);
+
+      const d = new Date();
+      const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+      // Calculate today's revenue dynamically from invoices
+      const todayInvoices = invoices.filter((inv: any) => !inv.createdAt || inv.createdAt.startsWith(todayStr) || inv.createdAt.split('T')[0] === todayStr);
+      const todayRevenue = todayInvoices.reduce((sum: number, inv: any) => sum + (Number(inv.totalAmount) || 0), 0);
+      const totalRevenue = invoices.reduce((sum: number, inv: any) => sum + (Number(inv.totalAmount) || 0), 0);
+
+      const todayExpenses = expenses.filter((exp: any) => !exp.date || exp.date.startsWith(todayStr) || exp.date.split('T')[0] === todayStr);
+      const todayExpenseTotal = todayExpenses.reduce((sum: number, exp: any) => sum + (Number(exp.amount) || 0), 0);
+
+      const todayAppts = appts.filter((a: any) => !a.appointmentDate || a.appointmentDate === todayStr || a.appointmentDate.startsWith(todayStr));
+
+      const appointmentBreakdown = {
+        total: todayAppts.length || appts.length,
+        scheduled: appts.filter((a: any) => ['SCHEDULED', 'CONFIRMED'].includes(a.status)).length,
+        checkedIn: appts.filter((a: any) => a.status === 'CHECKED_IN').length,
+        inService: appts.filter((a: any) => a.status === 'IN_SERVICE').length,
+        completed: appts.filter((a: any) => a.status === 'COMPLETED').length,
+      };
+
       return {
         status: 200,
         data: {
           success: true,
           data: {
             metrics: {
-              todayRevenue: 28500,
-              totalRevenue: 148500,
-              todayExpenseTotal: 4200,
-              netToday: 24300,
-              todayAppointmentsCount: 14,
-              totalCustomers: custCount,
+              todayRevenue,
+              totalRevenue,
+              todayExpenseTotal,
+              netToday: todayRevenue - todayExpenseTotal,
+              todayAppointmentsCount: todayAppts.length || appts.length,
+              totalCustomers: customers.length,
               activeBranches: 3,
               totalStaff: 12,
               inventoryCount: 48,
             },
-            appointmentBreakdown: { total: 14, scheduled: 5, checkedIn: 3, inService: 4, completed: 2 },
+            appointmentBreakdown,
             revenueTrend: [
               { date: 'Mon', revenue: 18200 },
               { date: 'Tue', revenue: 22400 },
@@ -733,29 +815,76 @@ apiClient.interceptors.response.use(
               { date: 'Thu', revenue: 26500 },
               { date: 'Fri', revenue: 31200 },
               { date: 'Sat', revenue: 42000 },
-              { date: 'Sun', revenue: 38500 },
+              { date: 'Today', revenue: todayRevenue },
             ],
           },
         },
       };
     }
 
-    // 12. POS Checkout & Invoices
+    // 12. POS Checkout & Invoices (Dynamic billing & transaction ledger)
     if (url.includes('/pos/checkout') || url.includes('/pos/invoices') || url.includes('/invoices')) {
+      const invoices = getStorageList('invoices', INITIAL_INVOICES);
+
+      // GET /pos/invoices or GET /invoices
+      if (method === 'get') {
+        return {
+          status: 200,
+          data: {
+            success: true,
+            count: invoices.length,
+            data: invoices,
+          },
+        };
+      }
+
+      // POST /pos/checkout (Create Invoice)
       const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
+      const customers = getStorageList('customers', INITIAL_CUSTOMERS);
+      const foundCust = customers.find((c: any) => c._id === body.customerId || c.id === body.customerId || (body.customerName && c.fullName?.toLowerCase() === body.customerName?.toLowerCase()));
+
+      const totalAmount = Number(body.totalAmount) || Number(body.grandTotal) || Number(body.payments?.[0]?.amount) || 0;
+      const subtotal = Number(body.subtotal) || Math.round(totalAmount / 1.18);
+      const taxAmount = Number(body.taxAmount) || (totalAmount - subtotal);
+      const discountAmount = Number(body.discountAmount) || 0;
+
       const invNum = `INV-HYD-01-${Date.now().toString().slice(-6)}`;
       const newInvoice = {
         _id: `inv_${Date.now()}`,
+        id: `inv_${Date.now()}`,
         invoiceNumber: invNum,
-        customerName: body.customerName || 'Aarav Singhania',
-        totalAmount: body.payments?.[0]?.amount || 3761,
+        customerId: body.customerId || foundCust?._id,
+        customerName: body.customerName || foundCust?.fullName || 'Walk-in Client',
+        customerPhone: body.customerPhone || foundCust?.phone || '+91 98765 43210',
+        items: body.items || [],
+        subtotal,
+        taxAmount,
+        discountAmount,
+        totalAmount,
+        grandTotal: totalAmount,
         paymentStatus: 'PAID',
-        payments: body.payments || [{ method: 'UPI', amount: 3761 }],
+        payments: body.payments || [{ method: 'CASH', amount: totalAmount }],
         createdAt: new Date().toISOString(),
       };
 
-      const invoices = getStorageList('invoices', []);
-      saveStorageList('invoices', [newInvoice, ...invoices]);
+      const updatedInvoices = [newInvoice, ...invoices];
+      saveStorageList('invoices', updatedInvoices);
+
+      // Update customer total visits & spent
+      if (foundCust) {
+        const updatedCustomers = customers.map((c: any) => {
+          if (c._id === foundCust._id || c.id === foundCust.id) {
+            return {
+              ...c,
+              totalSpent: (c.totalSpent || 0) + totalAmount,
+              totalVisits: (c.totalVisits || 0) + 1,
+              loyaltyPoints: (c.loyaltyPoints || 0) + Math.floor(totalAmount * 0.05),
+            };
+          }
+          return c;
+        });
+        saveStorageList('customers', updatedCustomers);
+      }
 
       return {
         status: 200,

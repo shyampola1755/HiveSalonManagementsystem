@@ -12,6 +12,7 @@ import {
   Sparkles,
   ArrowRight,
   Receipt,
+  CheckCircle2,
 } from 'lucide-react';
 
 export const DashboardView: React.FC = () => {
@@ -19,29 +20,48 @@ export const DashboardView: React.FC = () => {
   const navigate = useNavigate();
   const [metrics, setMetrics] = useState<any>(null);
   const [todayAppointments, setTodayAppointments] = useState<any[]>([]);
+  const [recentInvoices, setRecentInvoices] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const [dashRes, appRes] = await Promise.all([
-          apiClient.get('/reports/dashboard'),
-          apiClient.get('/appointments/queue'),
-        ]);
-        if (dashRes.data.success) {
-          setMetrics(dashRes.data.data);
-        }
-        if (appRes.data.success) {
-          setTodayAppointments(appRes.data.data);
-        }
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-      } finally {
-        setIsLoading(false);
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [dashRes, appRes, invRes] = await Promise.all([
+        apiClient.get('/reports/dashboard'),
+        apiClient.get('/appointments/queue'),
+        apiClient.get('/pos/invoices?limit=5'),
+      ]);
+
+      const getArray = (r: any) => {
+        if (!r) return [];
+        if (Array.isArray(r.data?.data)) return r.data.data;
+        if (Array.isArray(r.data)) return r.data;
+        if (Array.isArray(r.data?.data?.data)) return r.data.data.data;
+        return [];
+      };
+
+      if (dashRes.data?.success) {
+        setMetrics(dashRes.data.data);
+      } else if (dashRes.data) {
+        setMetrics(dashRes.data);
       }
-    };
+
+      setTodayAppointments(getArray(appRes));
+      setRecentInvoices(getArray(invRes));
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
+
+    // Refresh metrics on window focus so navigating back from POS immediately refreshes
+    const handleFocus = () => fetchData();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [activeBranchId]);
 
   return (
@@ -74,7 +94,7 @@ export const DashboardView: React.FC = () => {
             <TrendingUp className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="text-2xl font-black text-white">
-            ₹{metrics?.metrics?.todayRevenue?.toLocaleString('en-IN') || '0'}
+            ₹{(metrics?.metrics?.todayRevenue ?? 0).toLocaleString('en-IN')}
           </div>
           <div className="text-[11px] text-emerald-400 font-medium mt-1">
             Collected via cash, cards & UPI
@@ -121,7 +141,7 @@ export const DashboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Grid: Live Queue & Appointments */}
+      {/* Main Grid: Live Queue & Invoices */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Live Salon Queue & Active Appointments */}
         <div className="lg:col-span-2 glass-card p-6">
@@ -191,8 +211,49 @@ export const DashboardView: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Launch & Stylist Availability */}
+        {/* Right Column: Recent POS Invoices & Operational Shortcuts */}
         <div className="space-y-6">
+          {/* Recent POS Invoices Widget */}
+          <div className="glass-card p-6">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Receipt className="w-4 h-4 text-emerald-400" /> Recent POS Invoices
+              </h3>
+              <button
+                onClick={() => navigate('/front-desk/invoices')}
+                className="text-[11px] font-semibold text-brand-400 hover:text-brand-300 flex items-center gap-0.5"
+              >
+                View All <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              {recentInvoices.length === 0 ? (
+                <div className="text-center py-6 text-slate-500 text-xs">No invoices generated yet</div>
+              ) : (
+                recentInvoices.slice(0, 4).map((inv: any) => (
+                  <div
+                    key={inv._id || inv.id}
+                    onClick={() => navigate('/front-desk/invoices')}
+                    className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 hover:border-slate-700 cursor-pointer flex items-center justify-between text-xs transition-colors"
+                  >
+                    <div>
+                      <div className="font-bold text-white line-clamp-1">{inv.customerName || 'Client'}</div>
+                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">{inv.invoiceNumber}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-extrabold text-brand-300">₹{(inv.totalAmount || 0).toLocaleString('en-IN')}</div>
+                      <span className="inline-block px-1.5 py-0.2 text-[9px] font-bold rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        {inv.payments?.[0]?.method || 'PAID'}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Operational Shortcuts */}
           <div className="glass-card p-6">
             <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-brand-400" /> Operational Shortcuts

@@ -32,11 +32,12 @@ export const authenticateJWT = async (req: AuthRequest, res: Response, next: Nex
 
     // Extract active branch from custom header if present, or fallback to user's primary branch
     const branchHeader = req.headers['x-branch-id'] as string;
-    if (branchHeader && branchHeader !== 'undefined' && branchHeader !== 'null' && mongoose.Types.ObjectId.isValid(branchHeader)) {
+    if (branchHeader && branchHeader !== 'undefined' && branchHeader !== 'null' && !branchHeader.startsWith('{') && mongoose.Types.ObjectId.isValid(branchHeader)) {
       req.activeBranchId = branchHeader;
     } else if (user.primaryBranchId) {
-      const pId = (user.primaryBranchId as any)._id ? (user.primaryBranchId as any)._id.toString() : user.primaryBranchId.toString();
-      req.activeBranchId = mongoose.Types.ObjectId.isValid(pId) ? pId : undefined;
+      const rawBranch: any = user.primaryBranchId;
+      const bId = rawBranch._id ? rawBranch._id.toString() : (rawBranch.id ? rawBranch.id.toString() : (typeof rawBranch === 'string' ? rawBranch : ''));
+      req.activeBranchId = (bId && !bId.startsWith('{') && mongoose.Types.ObjectId.isValid(bId)) ? bId : undefined;
     } else {
       req.activeBranchId = undefined;
     }

@@ -12,9 +12,14 @@ export const InvoicesView: React.FC = () => {
     const fetchInvoices = async () => {
       try {
         const res = await apiClient.get('/pos/invoices');
-        if (res.data.success) {
-          setInvoices(res.data.data);
-        }
+        const getArray = (r: any) => {
+          if (!r) return [];
+          if (Array.isArray(r.data?.data)) return r.data.data;
+          if (Array.isArray(r.data)) return r.data;
+          if (Array.isArray(r.data?.data?.data)) return r.data.data.data;
+          return [];
+        };
+        setInvoices(getArray(res));
       } catch (e) {
         console.error(e);
       }
