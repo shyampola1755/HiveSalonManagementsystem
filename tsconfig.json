@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@hive/types": ["packages/types/src"],
+      "@hive/validation": ["packages/validation/src"],
+      "@hive/config": ["packages/config/src"],
+      "@hive/utilities": ["packages/utilities/src"],
+      "@hive/events": ["packages/events/src"],
+      "@hive/auth": ["packages/auth/src"],
+      "@hive/database": ["packages/database/src"],
+      "@hive/ui": ["packages/ui/src"]
+    }
+  },
+  "exclude": ["node_modules", "dist", ".next"]
+}

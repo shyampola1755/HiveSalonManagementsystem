@@ -1,0 +1,2198 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// 1. TENANT & GEOGRAPHICAL MULTI-BRANCH MODELS
+// -----------------------------------------------------------------------------
+
+model Organization {
+  id               String    @id @default(uuid())
+  name             String
+  legalName        String?
+  code             String    @unique
+  businessType     String    @default("SALON") // SALON, SPA, AESTHETIC_CLINIC, CHAIN
+  logoUrl          String?
+  email            String?
+  phone            String?
+  website          String?
+  address          String?
+  country          String    @default("India")
+  currency         String    @default("INR")
+  timezone         String    @default("Asia/Kolkata")
+  taxSettings      Json?
+  businessHours    Json?
+  status           String    @default("ACTIVE")
+  isSetupComplete  Boolean   @default(false)
+  setupStep        Int       @default(1)
+  deletedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  states           State[]
+  districts        District[]
+  cities           City[]
+  branches         Branch[]
+  users            User[]
+  userScopes       UserScope[]
+  customRoles      CustomRole[]
+  customers        Customer[]
+  serviceCategories ServiceCategory[]
+  services         Service[]
+  staffProfiles    StaffProfile[]
+  shiftTemplates   ShiftTemplate[]
+  rosterSchedules  StaffRosterSchedule[]
+  attendanceRecords StaffAttendanceRecord[]
+  leaveRequests    StaffLeaveRequest[]
+  appointments     Appointment[]
+  invoices         Invoice[]
+  productCategories ProductCategory[]
+  products         Product[]
+  vendors          Vendor[]
+  purchaseOrders   PurchaseOrder[]
+  branchTransfers  BranchTransfer[]
+  stockLedgerEntries StockLedgerEntry[]
+  serviceRecipes   ServiceRecipe[]
+  membershipTiers  MembershipTier[]
+  membershipPlans  MembershipPlan[]
+  servicePackageTemplates ServicePackageTemplate[]
+  customerPackages CustomerPackage[]
+  customerWallets  CustomerWallet[]
+  walletLedgerEntries CustomerWalletLedgerEntry[]
+  loyaltyTiers     LoyaltyTier[]
+  loyaltyAccounts  CustomerLoyaltyAccount[]
+  loyaltyPointsEntries LoyaltyPointsLedgerEntry[]
+  familyPlans      FamilyPlan[]
+  retentionExpiryAlerts RetentionExpiryAlert[]
+  marketingCampaigns MarketingCampaign[]
+  automationRules  AutomationWorkflowRule[]
+  outboundMessages OutboundMessage[]
+  customerReviews  CustomerReview[]
+  complaintTickets ComplaintTicket[]
+  communicationPreferences CommunicationPreference[]
+  auditLogs        AuditLog[]
+  commissionPlans  CommissionPlan[]
+  commissionLedgerEntries CommissionLedgerEntry[]
+  staffTargets     StaffPerformanceTarget[]
+  payrollSummaries PayrollPeriodSummary[]
+  expenses         Expense[]
+  financialPeriods FinancialPeriod[]
+  retailOrders     RetailOrder[]
+  aiAuditLogs      AIAuditLog[]
+
+  @@map("organizations")
+}
+
+model State {
+  id             String    @id @default(uuid())
+  organizationId String
+  name           String
+  code           String
+  status         String    @default("ACTIVE")
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  districts      District[]
+  cities         City[]
+  branches       Branch[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId, status])
+  @@map("states")
+}
+
+model District {
+  id             String    @id @default(uuid())
+  organizationId String
+  stateId        String
+  name           String
+  code           String
+  status         String    @default("ACTIVE")
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  state          State        @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  cities         City[]
+  branches       Branch[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId, stateId])
+  @@map("districts")
+}
+
+model City {
+  id             String    @id @default(uuid())
+  organizationId String
+  stateId        String
+  districtId     String
+  name           String
+  code           String
+  status         String    @default("ACTIVE")
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  state          State        @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  district       District     @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  branches       Branch[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId, districtId])
+  @@map("cities")
+}
+
+model Branch {
+  id              String    @id @default(uuid())
+  organizationId  String
+  stateId         String?
+  districtId      String?
+  cityId          String?
+  name            String
+  code            String
+  address         String
+  phone           String
+  email           String?
+  managerUserId   String?
+  operatingHours  Json?
+  openingDate     DateTime?
+  status          String    @default("ACTIVE")
+  isActive        Boolean   @default(true)
+  isMainBranch    Boolean   @default(false)
+  logoUrl         String?
+  taxConfig       Json?
+  invoiceConfig   Json?
+  deletedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  state           State?       @relation(fields: [stateId], references: [id], onDelete: SetNull)
+  district        District?    @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  city            City?        @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  userBranches    UserBranch[]
+  appointments    Appointment[]
+  invoices        Invoice[]
+  stocks          Stock[]
+  stockLedgerEntries StockLedgerEntry[]
+  purchaseOrders  PurchaseOrder[]
+  outgoingTransfers BranchTransfer[] @relation("SourceBranchTransfers")
+  incomingTransfers BranchTransfer[] @relation("DestinationBranchTransfers")
+  auditLogs       AuditLog[]
+  serviceBranchPricings ServiceBranchPricing[]
+  shiftTemplates  ShiftTemplate[]
+  rosterSchedules StaffRosterSchedule[]
+  attendanceRecords StaffAttendanceRecord[]
+  leaveRequests   StaffLeaveRequest[]
+  commissionPlans CommissionPlan[]
+  commissionLedgerEntries CommissionLedgerEntry[]
+  staffTargets    StaffPerformanceTarget[]
+  payrollSummaries PayrollPeriodSummary[]
+  marketingCampaigns MarketingCampaign[]
+  expenses        Expense[]
+  financialPeriods FinancialPeriod[]
+  retailOrders    RetailOrder[]
+  aiAuditLogs     AIAuditLog[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId, cityId])
+  @@index([organizationId, isActive])
+  @@map("branches")
+}
+
+// -----------------------------------------------------------------------------
+// 2. USERS, ROLES, SCOPES & SESSIONS
+// -----------------------------------------------------------------------------
+
+model User {
+  id                  String    @id @default(uuid())
+  organizationId      String
+  email               String    @unique
+  phone               String?
+  passwordHash        String
+  fullName            String
+  avatarUrl           String?
+  role                String    @default("FRONT_DESK")
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  lastLoginAt         DateTime?
+  isActive            Boolean   @default(true)
+  deletedAt           DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userBranches        UserBranch[]
+  userScopes          UserScope[]
+  sessions            Session[]
+  staffProfile        StaffProfile?
+  auditLogs           AuditLog[]
+  aiAuditLogs         AIAuditLog[]
+
+  @@index([organizationId, email])
+  @@index([organizationId, phone])
+  @@map("users")
+}
+
+model UserBranch {
+  id        String   @id @default(uuid())
+  userId    String
+  branchId  String
+  role      String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch    Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, branchId])
+  @@map("user_branches")
+}
+
+model UserScope {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String
+  scopeType      String   // ORGANIZATION, STATE, DISTRICT, CITY, BRANCH
+  targetId       String   // ID of the target State, District, City, or Branch
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, userId])
+  @@map("user_scopes")
+}
+
+model CustomRole {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  permissions    Json     // Array of permission strings
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
+  @@map("custom_roles")
+}
+
+model Session {
+  id               String   @id @default(uuid())
+  userId           String
+  refreshTokenHash String
+  userAgent        String?
+  ipAddress        String?
+  isRevoked        Boolean  @default(false)
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRevoked])
+  @@map("sessions")
+}
+
+model OtpVerification {
+  id         String   @id @default(uuid())
+  identifier String   // email or mobile number
+  otpHash    String
+  type       String   @default("PASSWORD_RESET") // PASSWORD_RESET, LOGIN_OTP, VERIFY_PHONE
+  attempts   Int      @default(0)
+  isUsed     Boolean  @default(false)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([identifier, isUsed])
+  @@map("otp_verifications")
+}
+
+// -----------------------------------------------------------------------------
+// 3. CUSTOMER CRM & 360° PROFILE
+// -----------------------------------------------------------------------------
+
+model Customer {
+  id                    String    @id @default(uuid())
+  organizationId        String
+  fullName              String
+  phone                 String
+  email                 String?
+  gender                String?   @default("UNSPECIFIED")
+  birthDate             DateTime?
+  address               String?
+  notes                 String?
+  customerSource        String?   @default("WALK_IN") // WALK_IN, INSTAGRAM, GOOGLE, REFERRAL, WEBSITE, CAMPAIGN
+  referredByCustomerId  String?
+  tags                  Json?     // e.g. ["VIP", "High Value", "Returning"]
+  loyaltyPoints         Int       @default(0)
+  walletBalance         Decimal   @default(0.00) @db.Decimal(10, 2)
+  totalSpent            Decimal   @default(0.00) @db.Decimal(10, 2)
+  totalVisits           Int       @default(0)
+  lastVisitAt           DateTime?
+  preferredBranchId     String?
+  preferredStylistId    String?
+  hairProfile           Json?     // texture, porosity, scalpType, density, curlPattern, length
+  skinProfile           Json?     // skinType, undertone, allergies, sensitivities, skinConcerns
+  preferences           Json?     // beverages, quietAppointment, pressurePreference, musicPreference
+  deletedAt             DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  organization          Organization                 @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  appointments          Appointment[]
+  invoices              Invoice[]
+  memberships           CustomerMembership[]
+  colorFormulas         CustomerColorFormula[]
+  patchTests            CustomerPatchTest[]
+  staffNotes            CustomerNote[]
+  wallet                CustomerWallet?
+  walletTransactions    CustomerWalletTransaction[]
+  walletLedgerEntries   CustomerWalletLedgerEntry[]
+  loyaltyAccount        CustomerLoyaltyAccount?
+  loyaltyPointsEntries  LoyaltyPointsLedgerEntry[]
+  primaryFamilyPlans    FamilyPlan[]                 @relation("PrimaryCustomerFamilyPlans")
+  retentionExpiryAlerts RetentionExpiryAlert[]
+  timelineEvents        CustomerTimelineEvent[]
+  packages              CustomerPackage[]
+  reviews               CustomerReview[]
+  outboundMessages      OutboundMessage[]
+  complaintTickets      ComplaintTicket[]
+  communicationPreference CommunicationPreference?
+  retailOrders          RetailOrder[]
+
+  @@index([organizationId, phone])
+  @@index([organizationId, email])
+  @@index([organizationId, preferredBranchId])
+  @@map("customers")
+}
+
+model CustomerColorFormula {
+  id                     String   @id @default(uuid())
+  customerId             String
+  formulaName            String   // e.g. "Warm Mocha Balayage Gloss"
+  brand                  String   // e.g. "L'Oréal Professionnel Majirel"
+  formulaMix             String   // e.g. "6.13 (30g) + 7.1 (15g) + Clear (10g)"
+  developerVolume        String   // e.g. "20 Vol (6%)"
+  developerRatio         String   // e.g. "1:1.5"
+  processingTimeMinutes  Int      @default(35)
+  targetHairTone         String?  // e.g. "Cool Sandy Blonde"
+  stylistNotes           String?
+  technicianUserId       String?
+  appliedAt              DateTime @default(now())
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  customer               Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, appliedAt])
+  @@map("customer_color_formulas")
+}
+
+model CustomerPatchTest {
+  id                 String    @id @default(uuid())
+  customerId         String
+  testType           String    // "HAIR_COLOR_DYE", "BLEACH", "KERATIN", "CHEMICAL_PEEL", "LASH_GLUE"
+  chemicalOrBrandName String   // e.g. "Wella Blondor / PPD Allergen Check"
+  testedAt           DateTime  @default(now())
+  result             String    @default("PENDING") // "PASSED", "FAILED", "PENDING"
+  validUntil         DateTime?
+  technicianUserId   String?
+  notes              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  customer           Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, testedAt])
+  @@map("customer_patch_tests")
+}
+
+model CustomerNote {
+  id               String   @id @default(uuid())
+  customerId       String
+  note             String
+  isPrivate        Boolean  @default(false)
+  category         String   @default("GENERAL") // "GENERAL", "TECH_FORMULA", "BEHAVIORAL", "MEDICAL"
+  authorUserId     String?
+  authorName       String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  customer         Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, createdAt])
+  @@map("customer_notes")
+}
+
+model CustomerWalletTransaction {
+  id                 String   @id @default(uuid())
+  customerId         String
+  amount             Decimal  @db.Decimal(10, 2)
+  type               String   // "CREDIT", "DEBIT", "CASHBACK", "REFUND"
+  reason             String   // e.g. "Top-up via UPI", "Invoice #HIVE-HYD-041 deduction", "Festive Promo Bonus"
+  balanceAfter       Decimal  @db.Decimal(10, 2)
+  referenceInvoiceId String?
+  createdAt          DateTime @default(now())
+
+  customer           Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, createdAt])
+  @@map("customer_wallet_transactions")
+}
+
+model CustomerTimelineEvent {
+  id          String   @id @default(uuid())
+  customerId  String
+  eventType   String   // "APPOINTMENT_BOOKED", "APPOINTMENT_COMPLETED", "INVOICE_GENERATED", "PAYMENT_RECEIVED", "MEMBERSHIP_PURCHASED", "REVIEW_SUBMITTED", "MARKETING_SENT", "FORMULA_APPLIED", "PATCH_TEST_RECORDED"
+  title       String
+  description String
+  metadata    Json?
+  occurredAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, occurredAt])
+  @@map("customer_timeline_events")
+}
+
+model CustomerPackage {
+  id                String                     @id @default(uuid())
+  organizationId    String?
+  customerId        String
+  templateId        String?
+  serviceId         String?
+  packageName       String                     // e.g. "10 Haircuts Session Pass", "Bridal Radiant Glow 6-Pack"
+  packageCode       String?
+  totalSessions     Int
+  usedSessions      Int                        @default(0)
+  remainingSessions Int                        @default(0)
+  totalPrice        Decimal                    @db.Decimal(10, 2)
+  sessionPrice      Decimal                    @default(0.00) @db.Decimal(10, 2)
+  status            String                     @default("ACTIVE") // "ACTIVE", "COMPLETED", "EXPIRED"
+  expiresAt         DateTime?
+  purchasedAt       DateTime                   @default(now())
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+
+  organization      Organization?              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer          Customer                   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  template          ServicePackageTemplate?    @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  redemptions       CustomerPackageRedemption[]
+
+  @@index([customerId, status])
+  @@map("customer_packages")
+}
+
+model CustomerReview {
+  id                   String            @id @default(uuid())
+  organizationId       String?
+  customerId           String
+  branchId             String?
+  appointmentId        String?
+  rating               Int               @default(5) // 1 to 5 stars
+  staffRating          Int?              @default(5)
+  serviceRating        Int?              @default(5)
+  ambienceRating       Int?              @default(5)
+  comment              String?
+  stylistName          String?
+  serviceName          String?
+  csatScore            Int?              @default(100) // 0-100%
+  source               String            @default("WHATSAPP_LINK") // WHATSAPP_LINK, SMS_LINK, QR_CODE, IN_APP
+  isEscalated          Boolean           @default(false)
+  isPublic             Boolean           @default(true)
+  publicResponse       String?
+  respondedAt          DateTime?
+  createdAt            DateTime          @default(now())
+
+  customer             Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  organization         Organization?     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  complaintTicket      ComplaintTicket?
+
+  @@index([customerId, createdAt])
+  @@map("customer_reviews")
+}
+
+// -----------------------------------------------------------------------------
+// 4. SERVICES CATALOG & PRICING
+// -----------------------------------------------------------------------------
+
+model ServiceCategory {
+  id              String    @id @default(uuid())
+  organizationId  String
+  name            String    // Hair, Hair Color, Hair Treatment, Facial, Skin, Spa, Massage, Nails, Makeup, Bridal, Tattoo, Aesthetic, Wellness, Other
+  slug            String?
+  description     String?
+  icon            String?
+  color           String?
+  sortOrder       Int       @default(0)
+  isActive        Boolean   @default(true)
+  deletedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  services        Service[]
+
+  @@unique([organizationId, name])
+  @@map("service_categories")
+}
+
+model Service {
+  id                    String    @id @default(uuid())
+  organizationId        String
+  categoryId            String
+  name                  String
+  customerDescription   String?   // Public/Customer-facing marketing text
+  internalNotes         String?   // Private stylist technical instructions
+  durationMinutes       Int       @default(30)
+  bufferMinutes         Int       @default(10)
+  basePrice             Decimal   @db.Decimal(10, 2)
+  taxRate               Decimal   @default(18.00) @db.Decimal(5, 2)
+  imageUrl              String?
+  status                String    @default("ACTIVE") // ACTIVE, INACTIVE, DRAFT
+  genderTarget          String    @default("ALL") // ALL, FEMALE, MALE, KIDS
+  onlineBookingEnabled  Boolean   @default(true)
+  deletedAt             DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  organization          Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  category              ServiceCategory           @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  appointments          Appointment[]
+  branchPricings        ServiceBranchPricing[]
+  staffEligibilities    ServiceStaffEligibility[]
+  addons                ServiceAddon[]
+  recipes               ServiceRecipe[]
+
+  @@index([organizationId, categoryId])
+  @@index([organizationId, status])
+  @@map("services")
+}
+
+model ServiceBranchPricing {
+  id              String   @id @default(uuid())
+  serviceId       String
+  branchId        String
+  price           Decimal  @db.Decimal(10, 2)
+  durationMinutes Int?     // Optional branch duration override
+  isAvailable     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  service         Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  branch          Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, branchId])
+  @@index([branchId, isAvailable])
+  @@map("service_branch_pricings")
+}
+
+model ServiceStaffEligibility {
+  id                 String       @id @default(uuid())
+  serviceId          String
+  staffId            String
+  commissionOverride Decimal?     @db.Decimal(5, 2)
+  createdAt          DateTime     @default(now())
+
+  service            Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  staff              StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, staffId])
+  @@map("service_staff_eligibilities")
+}
+
+model ServiceAddon {
+  id              String   @id @default(uuid())
+  serviceId       String
+  name            String   // e.g. "Scalp Massage 15m", "Hydrating Ampoule", "Olaplex Bond Multiplier"
+  description     String?
+  durationMinutes Int      @default(15)
+  price           Decimal  @db.Decimal(10, 2)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  service         Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@index([serviceId, isActive])
+  @@map("service_addons")
+}
+
+// -----------------------------------------------------------------------------
+// 5. STAFF PROFILES
+// -----------------------------------------------------------------------------
+
+model StaffProfile {
+  id                    String    @id @default(uuid())
+  organizationId        String
+  userId                String    @unique
+  employeeCode          String    // e.g. EMP-HYD-001
+  displayName           String
+  jobTitle              String
+  staffType             String    @default("STYLIST") // STYLIST, HAIRDRESSER, BEAUTICIAN, THERAPIST, NAIL_ARTIST, MAKEUP_ARTIST, TATTOO_ARTIST, FRONT_DESK, MANAGER, ACCOUNTANT
+  phone                 String?
+  email                 String?
+  joiningDate           DateTime  @default(now())
+  specialization        String[]  // Array of skills/specializations
+  skills                String[]  // Array of specific technique tags
+  assignedServiceIds    String[]  // IDs of services this staff is qualified for
+  commissionType        String    @default("PERCENTAGE") // PERCENTAGE, FIXED, TIERED
+  commissionRate        Decimal   @default(15.00) @db.Decimal(5, 2)
+  monthlyRevenueTarget  Decimal   @default(100000.00) @db.Decimal(10, 2)
+  monthlyServiceTarget  Int       @default(60)
+  isAvailableForBooking Boolean   @default(true)
+  status                String    @default("ACTIVE") // ACTIVE, ON_LEAVE, INACTIVE, TERMINATED
+  primaryBranchId       String?
+  assignedBranchIds     String[]  // Multiple permitted branches
+  workingHours          Json?     // Standard weekly working schedule
+  deletedAt             DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  organization          Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                  User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments          Appointment[]
+  serviceEligibilities  ServiceStaffEligibility[]
+  attendanceRecords     StaffAttendanceRecord[]
+  rosterSchedules       StaffRosterSchedule[]
+  leaveRequests         StaffLeaveRequest[]
+  leaveBalances         StaffLeaveBalance[]
+  commissionLedgerEntries CommissionLedgerEntry[]
+  performanceTargets    StaffPerformanceTarget[]
+  payrollLines          PayrollStaffLine[]
+
+  @@unique([organizationId, employeeCode])
+  @@index([organizationId, staffType, status])
+  @@map("staff_profiles")
+}
+
+model ShiftTemplate {
+  id                   String    @id @default(uuid())
+  organizationId       String
+  branchId             String?
+  name                 String    // Morning Shift, Evening Shift, Full Day, Split Shift
+  code                 String    // MORN, EVEN, FULL, SPLIT
+  startTime            String    // "09:00"
+  endTime              String    // "18:00"
+  breakDurationMinutes Int       @default(60)
+  color                String?   @default("#d97706")
+  isActive             Boolean   @default(true)
+  deletedAt            DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch               Branch?               @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  rosterSchedules      StaffRosterSchedule[]
+
+  @@unique([organizationId, code])
+  @@map("shift_templates")
+}
+
+model StaffRosterSchedule {
+  id              String         @id @default(uuid())
+  organizationId  String
+  branchId        String
+  staffId         String
+  shiftTemplateId String?
+  date            DateTime       // Schedule date
+  dayOfWeek       String         // MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY
+  startTime       String?        // "09:00"
+  endTime         String?        // "18:00"
+  isOffDay        Boolean        @default(false)
+  isHoliday       Boolean        @default(false)
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch          Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  staff           StaffProfile   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  shiftTemplate   ShiftTemplate? @relation(fields: [shiftTemplateId], references: [id], onDelete: SetNull)
+
+  @@unique([branchId, staffId, date])
+  @@index([organizationId, branchId, date])
+  @@map("staff_roster_schedules")
+}
+
+model StaffAttendanceRecord {
+  id                 String       @id @default(uuid())
+  organizationId     String
+  branchId           String
+  staffId            String
+  date               DateTime     @default(now())
+  checkInTime        DateTime?
+  checkOutTime       DateTime?
+  status             String       @default("PRESENT") // PRESENT, LATE, HALF_DAY, ABSENT, ON_LEAVE, OVERTIME
+  checkInMethod      String       @default("WEB_PORTAL") // WEB_PORTAL, MOBILE_GPS, BIOMETRIC_DEVICE, RFID_CARD, MANUAL_MANAGER
+  lateMinutes        Int          @default(0)
+  earlyExitMinutes   Int          @default(0)
+  overtimeMinutes    Int          @default(0)
+  totalWorkingHours  Decimal      @default(0.00) @db.Decimal(5, 2)
+  breakMinutes       Int          @default(0)
+  biometricDeviceId  String?      // Biometric hardware device identifier
+  biometricSyncToken String?      // Sync token / raw punch hash
+  notes              String?
+  approvedByUserId   String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch             Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  staff              StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, branchId, date])
+  @@index([staffId, date])
+  @@map("staff_attendance_records")
+}
+
+model StaffLeaveRequest {
+  id               String       @id @default(uuid())
+  organizationId   String
+  branchId         String
+  staffId          String
+  leaveType        String       @default("CASUAL_LEAVE") // CASUAL_LEAVE, SICK_LEAVE, EARNED_LEAVE, MATERNITY_PATERNITY, UNPAID_LEAVE
+  startDate        DateTime
+  endDate          DateTime
+  totalDays        Decimal      @default(1.0) @db.Decimal(4, 1)
+  isHalfDay        Boolean      @default(false)
+  reason           String
+  status           String       @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
+  reviewedByUserId String?
+  reviewedByName   String?
+  reviewedAt       DateTime?
+  reviewNotes      String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch           Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  staff            StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, branchId, status])
+  @@index([staffId, status])
+  @@map("staff_leave_requests")
+}
+
+model StaffLeaveBalance {
+  id               String       @id @default(uuid())
+  staffId          String
+  year             Int          @default(2026)
+  casualLeaveTotal Decimal      @default(12.0) @db.Decimal(4, 1)
+  casualLeaveUsed  Decimal      @default(0.0) @db.Decimal(4, 1)
+  sickLeaveTotal   Decimal      @default(8.0) @db.Decimal(4, 1)
+  sickLeaveUsed    Decimal      @default(0.0) @db.Decimal(4, 1)
+  earnedLeaveTotal Decimal      @default(15.0) @db.Decimal(4, 1)
+  earnedLeaveUsed  Decimal      @default(0.0) @db.Decimal(4, 1)
+  updatedAt        DateTime     @updatedAt
+
+  staff            StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, year])
+  @@map("staff_leave_balances")
+}
+
+// -----------------------------------------------------------------------------
+// 6. APPOINTMENTS & CALENDAR
+// -----------------------------------------------------------------------------
+
+model Appointment {
+  id                  String    @id @default(uuid())
+  appointmentNumber   String    // e.g. "APT-20260910-001"
+  organizationId      String
+  branchId            String
+  customerId          String
+  staffId             String    // Primary assigned staff member
+  serviceId           String    // Primary service
+  startTime           DateTime
+  endTime             DateTime
+  status              String    @default("BOOKED") // BOOKED, CONFIRMED, ARRIVED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW
+  isWalkIn            Boolean   @default(false)
+  queueToken          String?   // e.g. "W-01", "W-02" for walk-ins
+  queueStatus         String?   // WAITING, CALLED, IN_SERVICE, COMPLETED, CANCELLED
+  checkedInAt         DateTime?
+  serviceStartedAt    DateTime?
+  serviceCompletedAt  DateTime?
+  cancelledAt         DateTime?
+  cancellationReason  String?
+  bufferMinutes       Int       @default(15)
+  totalDurationMinutes Int      @default(45)
+  subtotal            Decimal   @default(0.00) @db.Decimal(10, 2)
+  taxAmount           Decimal   @default(0.00) @db.Decimal(10, 2)
+  totalAmount         Decimal   @db.Decimal(10, 2)
+  source              String    @default("FRONT_DESK") // FRONT_DESK, ONLINE_PORTAL, MOBILE_APP, WALK_IN
+  paymentStatus       String    @default("PENDING") // PENDING, PAID, PARTIALLY_PAID
+  notes               String?
+  clientPreferences   String?
+  deletedAt           DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  organization        Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch              Branch                   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  customer            Customer                 @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  staff               StaffProfile             @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  service             Service                  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  appointmentServices AppointmentService[]
+  notifications       AppointmentNotification[]
+
+  @@unique([organizationId, appointmentNumber])
+  @@index([organizationId, branchId, startTime])
+  @@index([organizationId, staffId, startTime])
+  @@index([organizationId, status])
+  @@index([branchId, queueStatus])
+  @@map("appointments")
+}
+
+model AppointmentService {
+  id              String   @id @default(uuid())
+  appointmentId   String
+  serviceId       String
+  staffId         String?
+  sequenceOrder   Int      @default(1)
+  durationMinutes Int
+  bufferMinutes   Int      @default(10)
+  price           Decimal  @db.Decimal(10, 2)
+  taxRate         Decimal  @default(18.00) @db.Decimal(5, 2)
+  startTime       DateTime?
+  endTime         DateTime?
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  appointment     Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId])
+  @@map("appointment_services")
+}
+
+model AppointmentNotification {
+  id              String   @id @default(uuid())
+  appointmentId   String
+  type            String   // CONFIRMATION, REMINDER_24H, REMINDER_2H, CANCELLATION, RESCHEDULE
+  channel         String   // SMS, WHATSAPP, EMAIL
+  recipient       String   // Phone or email
+  message         String
+  status          String   @default("SENT") // PENDING, SENT, FAILED
+  sentAt          DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  appointment     Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId, type])
+  @@map("appointment_notifications")
+}
+
+// -----------------------------------------------------------------------------
+// 7. INVOICING, POS, PAYMENTS & RECEIPTS
+// -----------------------------------------------------------------------------
+
+model Invoice {
+  id                    String    @id @default(uuid())
+  organizationId        String
+  branchId              String
+  customerId            String?
+  appointmentId         String?
+  invoiceNumber         String    // Format: DISTRICT-BRANCH-YEAR-SEQUENCE, e.g. "HYD-JUB-2026-000001"
+  subtotal              Decimal   @db.Decimal(10, 2)
+  discountTotal         Decimal   @default(0.00) @db.Decimal(10, 2)
+  discountType          String?   // PERCENTAGE, FIXED, MEMBERSHIP, PROMO
+  discountReason        String?
+  membershipDiscount    Decimal   @default(0.00) @db.Decimal(10, 2)
+  loyaltyRedeemedPoints Int       @default(0)
+  loyaltyDiscountAmount Decimal   @default(0.00) @db.Decimal(10, 2)
+  walletDebitedAmount   Decimal   @default(0.00) @db.Decimal(10, 2)
+  cgstAmount            Decimal   @default(0.00) @db.Decimal(10, 2) // 9% Central GST
+  sgstAmount            Decimal   @default(0.00) @db.Decimal(10, 2) // 9% State GST
+  taxTotal              Decimal   @default(0.00) @db.Decimal(10, 2) // 18% Total GST
+  grandTotal            Decimal   @db.Decimal(10, 2)
+  paidAmount            Decimal   @default(0.00) @db.Decimal(10, 2)
+  balanceAmount         Decimal   @default(0.00) @db.Decimal(10, 2)
+  status                String    @default("PAID") // PAID, PARTIALLY_PAID, PENDING, REFUNDED, PARTIALLY_REFUNDED, VOID
+  idempotencyKey        String?   @unique
+  voidedAt              DateTime?
+  voidReason            String?
+  voidedBy              String?
+  refundedAmount        Decimal   @default(0.00) @db.Decimal(10, 2)
+  refundReason          String?
+  refundedAt            DateTime?
+  notes                 String?
+  deletedAt             DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  organization          Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch                Branch           @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  customer              Customer?        @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items                 InvoiceItem[]
+  payments              Payment[]
+  refunds               Refund[]
+  digitalReceipts       DigitalReceipt[]
+  commissionLedgerEntries CommissionLedgerEntry[]
+
+  @@unique([organizationId, invoiceNumber])
+  @@index([organizationId, branchId, createdAt])
+  @@index([organizationId, status])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id             String   @id @default(uuid())
+  invoiceId      String
+  itemType       String   @default("SERVICE") // SERVICE, PRODUCT, MEMBERSHIP, PACKAGE, ADDON
+  itemId         String
+  itemName       String
+  itemCode       String?
+  quantity       Int      @default(1)
+  unitPrice      Decimal  @db.Decimal(10, 2)
+  discount       Decimal  @default(0.00) @db.Decimal(10, 2)
+  tax            Decimal  @default(0.00) @db.Decimal(10, 2)
+  totalPrice     Decimal  @db.Decimal(10, 2)
+  staffId        String?  // Stylist / staff attribution
+  staffName      String?
+  commissionRate Decimal  @default(0.00) @db.Decimal(5, 2)
+  createdAt      DateTime @default(now())
+
+  invoice        Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  commissionLedgerEntries CommissionLedgerEntry[]
+
+  @@index([invoiceId])
+  @@map("invoice_items")
+}
+
+model Payment {
+  id                   String    @id @default(uuid())
+  invoiceId            String
+  amount               Decimal   @db.Decimal(10, 2)
+  paymentMethod        String    // CASH, UPI, CARD, WALLET, MEMBERSHIP_CREDIT
+  transactionReference String?   // UPI UTR, Card Auth Code, Gateway Ref
+  status               String    @default("SUCCESS") // SUCCESS, PENDING, REFUNDED, FAILED
+  isAdvance            Boolean   @default(false)
+  notes                String?
+  createdAt            DateTime  @default(now())
+
+  invoice              Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  refunds              Refund[]
+
+  @@index([invoiceId])
+  @@map("payments")
+}
+
+model Refund {
+  id           String   @id @default(uuid())
+  invoiceId    String
+  paymentId    String?
+  amount       Decimal  @db.Decimal(10, 2)
+  reason       String
+  refundMethod String   @default("ORIGINAL_PAYMENT") // ORIGINAL_PAYMENT, CASH, WALLET_CREDIT
+  processedBy  String?
+  createdAt    DateTime @default(now())
+
+  invoice      Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  payment      Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@map("refunds")
+}
+
+model DigitalReceipt {
+  id         String    @id @default(uuid())
+  invoiceId  String
+  channel    String    // WHATSAPP, SMS, EMAIL
+  recipient  String    // Mobile number or email
+  status     String    @default("QUEUED") // QUEUED, SENT, FAILED
+  sentAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  invoice    Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId, channel])
+  @@map("digital_receipts")
+}
+
+// -----------------------------------------------------------------------------
+// 8. PRODUCTS & INVENTORY
+// -----------------------------------------------------------------------------
+
+model ProductCategory {
+  id              String    @id @default(uuid())
+  organizationId  String
+  name            String
+  description     String?
+  deletedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  products        Product[]
+
+  @@unique([organizationId, name])
+  @@map("product_categories")
+}
+
+model Product {
+  id              String    @id @default(uuid())
+  organizationId  String
+  categoryId      String?
+  name            String
+  sku             String
+  barcode         String?
+  brand           String?
+  costPrice       Decimal   @db.Decimal(10, 2)
+  sellingPrice    Decimal   @default(0.00) @db.Decimal(10, 2)
+  retailPrice     Decimal   @db.Decimal(10, 2)
+  taxRate         Decimal   @default(18.00) @db.Decimal(5, 2)
+  minThreshold    Int       @default(5)
+  isRetail        Boolean   @default(true)
+  isBackbar       Boolean   @default(true)
+  unit            String    @default("pcs") // ml, g, unit, oz, bottle, pcs
+  batchNumber     String?
+  expiryDate      DateTime?
+  status          String    @default("ACTIVE") // ACTIVE, INACTIVE, DISCONTINUED
+  deletedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  category        ProductCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  stocks          Stock[]
+  ledgerEntries   StockLedgerEntry[]
+  recipeItems     ServiceRecipeItem[]
+  poItems         PurchaseOrderItem[]
+  transferItems   BranchTransferItem[]
+  vendorProducts  VendorProduct[]
+  retailOrderItems RetailOrderItem[]
+
+  @@unique([organizationId, sku])
+  @@index([organizationId, barcode])
+  @@index([organizationId, brand])
+  @@map("products")
+}
+
+model Stock {
+  id               String    @id @default(uuid())
+  branchId         String
+  productId        String
+  currentStock     Decimal   @default(0.00) @db.Decimal(10, 2)
+  reservedStock    Decimal   @default(0.00) @db.Decimal(10, 2)
+  availableStock   Decimal   @default(0.00) @db.Decimal(10, 2)
+  reorderThreshold Decimal   @default(5.00) @db.Decimal(10, 2)
+  batchNumber      String?
+  expiryDate       DateTime?
+  lastCostPrice    Decimal?  @db.Decimal(10, 2)
+  updatedAt        DateTime  @updatedAt
+  createdAt        DateTime  @default(now())
+
+  branch           Branch    @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  product          Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, productId])
+  @@index([branchId, currentStock])
+  @@map("stocks")
+}
+
+model StockLedgerEntry {
+  id                String   @id @default(uuid())
+  organizationId    String
+  branchId          String
+  productId         String
+  batchNumber       String?
+  movementType      String   // PURCHASE, SALE, SERVICE_CONSUMPTION, TRANSFER_OUT, TRANSFER_IN, ADJUSTMENT, DAMAGE, EXPIRY, RETURN, OPENING_STOCK
+  quantity          Decimal  @db.Decimal(10, 2) // Signed or relative (+50 or -10)
+  balanceBefore     Decimal  @db.Decimal(10, 2)
+  balanceAfter      Decimal  @db.Decimal(10, 2)
+  unitCost          Decimal  @default(0.00) @db.Decimal(10, 2)
+  totalCost         Decimal  @default(0.00) @db.Decimal(10, 2)
+  referenceType     String?  // PURCHASE_ORDER, INVOICE, APPOINTMENT, TRANSFER, MANUAL_ADJUSTMENT, EXPIRY_AUDIT
+  referenceId       String?  // e.g. PO #, Invoice #, Appointment #, Transfer #
+  notes             String?
+  performedByUserId String?
+  performedByName   String?
+  createdAt         DateTime @default(now())
+
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch            Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  product           Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, branchId, createdAt])
+  @@index([productId, movementType])
+  @@index([referenceType, referenceId])
+  @@map("stock_ledger_entries")
+}
+
+model ServiceRecipe {
+  id             String              @id @default(uuid())
+  organizationId String
+  serviceId      String
+  name           String
+  description    String?
+  isActive       Boolean             @default(true)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  service        Service             @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  items          ServiceRecipeItem[]
+
+  @@unique([organizationId, serviceId])
+  @@map("service_recipes")
+}
+
+model ServiceRecipeItem {
+  id         String        @id @default(uuid())
+  recipeId   String
+  productId  String
+  quantity   Decimal       @db.Decimal(10, 2) // e.g. 60.00
+  unit       String        @default("ml") // ml, g, unit, oz, bottle, pcs
+  notes      String?       // e.g. "Primary Tint Formula", "Developer 20 Vol"
+  isOptional Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+
+  recipe     ServiceRecipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  product    Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId])
+  @@map("service_recipe_items")
+}
+
+model Vendor {
+  id             String          @id @default(uuid())
+  organizationId String
+  name           String
+  code           String
+  contactPerson  String?
+  phone          String?
+  email          String?
+  address        String?
+  city           String?
+  gstin          String?
+  paymentTerms   String?         @default("Net 30")
+  bankDetails    Json?
+  status         String          @default("ACTIVE") // ACTIVE, INACTIVE
+  notes          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  purchaseOrders PurchaseOrder[]
+  vendorInvoices VendorInvoice[]
+  products       VendorProduct[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId, status])
+  @@map("vendors")
+}
+
+model VendorProduct {
+  id            String   @id @default(uuid())
+  vendorId      String
+  productId     String
+  vendorSku     String?
+  unitPrice     Decimal  @db.Decimal(10, 2)
+  leadTimeDays  Int      @default(3)
+  isPreferred   Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  vendor        Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorId, productId])
+  @@map("vendor_products")
+}
+
+model PurchaseOrder {
+  id                   String              @id @default(uuid())
+  organizationId       String
+  branchId             String
+  vendorId             String
+  poNumber             String              // e.g. "PO-HYD-2026-0001"
+  status               String              @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, RECEIVED, CANCELLED, REJECTED
+  orderDate            DateTime            @default(now())
+  expectedDeliveryDate DateTime?
+  receivedDate         DateTime?
+  subtotal             Decimal             @default(0.00) @db.Decimal(10, 2)
+  taxTotal             Decimal             @default(0.00) @db.Decimal(10, 2)
+  shippingCost         Decimal             @default(0.00) @db.Decimal(10, 2)
+  grandTotal           Decimal             @default(0.00) @db.Decimal(10, 2)
+  notes                String?
+  approvedByUserId     String?
+  approvedAt           DateTime?
+  receivedByUserId     String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  organization         Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch               Branch              @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  vendor               Vendor              @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  items                PurchaseOrderItem[]
+  invoices             VendorInvoice[]
+
+  @@unique([organizationId, poNumber])
+  @@index([organizationId, branchId, status])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(uuid())
+  purchaseOrderId String
+  productId       String
+  quantityOrdered Decimal       @db.Decimal(10, 2)
+  quantityReceived Decimal      @default(0.00) @db.Decimal(10, 2)
+  unitCost        Decimal       @db.Decimal(10, 2)
+  taxRate         Decimal       @default(18.00) @db.Decimal(5, 2)
+  taxAmount       Decimal       @default(0.00) @db.Decimal(10, 2)
+  totalAmount     Decimal       @db.Decimal(10, 2)
+  batchNumber     String?
+  expiryDate      DateTime?
+  createdAt       DateTime      @default(now())
+
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([purchaseOrderId])
+  @@map("purchase_order_items")
+}
+
+model VendorInvoice {
+  id              String        @id @default(uuid())
+  organizationId  String
+  vendorId        String
+  purchaseOrderId String?
+  invoiceNumber   String
+  invoiceDate     DateTime      @default(now())
+  dueDate         DateTime?
+  amount          Decimal       @db.Decimal(10, 2)
+  paidAmount      Decimal       @default(0.00) @db.Decimal(10, 2)
+  balanceAmount   Decimal       @default(0.00) @db.Decimal(10, 2)
+  status          String        @default("UNPAID") // UNPAID, PARTIALLY_PAID, PAID, OVERDUE
+  paymentMode     String?
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  vendor          Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
+
+  @@unique([vendorId, invoiceNumber])
+  @@index([organizationId, status])
+  @@map("vendor_invoices")
+}
+
+model BranchTransfer {
+  id                   String               @id @default(uuid())
+  organizationId       String
+  transferNumber       String               // e.g. "TR-2026-0001"
+  sourceBranchId       String
+  destinationBranchId  String
+  status               String               @default("REQUESTED") // REQUESTED, APPROVED, DISPATCHED, IN_TRANSIT, RECEIVED, CANCELLED, REJECTED
+  requestedByUserId    String?
+  requestedAt          DateTime             @default(now())
+  approvedByUserId     String?
+  approvedAt           DateTime?
+  dispatchedByUserId   String?
+  dispatchedAt         DateTime?
+  receivedByUserId     String?
+  receivedAt           DateTime?
+  trackingNumber       String?
+  transportMode        String?
+  notes                String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  organization         Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sourceBranch         Branch               @relation("SourceBranchTransfers", fields: [sourceBranchId], references: [id], onDelete: Cascade)
+  destinationBranch    Branch               @relation("DestinationBranchTransfers", fields: [destinationBranchId], references: [id], onDelete: Cascade)
+  items                BranchTransferItem[]
+
+  @@unique([organizationId, transferNumber])
+  @@index([organizationId, status])
+  @@map("branch_transfers")
+}
+
+model BranchTransferItem {
+  id                 String         @id @default(uuid())
+  transferId         String
+  productId          String
+  quantityRequested  Decimal        @db.Decimal(10, 2)
+  quantityDispatched Decimal        @default(0.00) @db.Decimal(10, 2)
+  quantityReceived   Decimal        @default(0.00) @db.Decimal(10, 2)
+  batchNumber        String?
+  unitCost           Decimal        @default(0.00) @db.Decimal(10, 2)
+  createdAt          DateTime       @default(now())
+
+  transfer           BranchTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  product            Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([transferId])
+  @@map("branch_transfer_items")
+}
+
+// -----------------------------------------------------------------------------
+// 9. MEMBERSHIPS, PACKAGES, WALLETS, LOYALTY & FAMILY RETENTION ENGINE (PHASE 11)
+// -----------------------------------------------------------------------------
+
+model MembershipTier {
+  id                 String    @id @default(uuid())
+  organizationId     String
+  name               String
+  price              Decimal   @db.Decimal(10, 2)
+  validityDays       Int       @default(365)
+  discountPercentage Decimal   @default(10.00) @db.Decimal(5, 2)
+  perksDescription   String?
+  isActive           Boolean   @default(true)
+  deletedAt          DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  organization       Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customerMemberships CustomerMembership[]
+
+  @@unique([organizationId, name])
+  @@map("membership_tiers")
+}
+
+model MembershipPlan {
+  id                     String               @id @default(uuid())
+  organizationId         String
+  name                   String               // e.g. "Royal Diamond Club", "Hair & Glow Monthly Pass"
+  code                   String               // e.g. "ROYAL-DIA-01", "PREPAID-10K", "FAM-ELITE"
+  type                   String               @default("DISCOUNT") // DISCOUNT, PREPAID_CREDIT, SERVICE_PACKAGE, FAMILY_PACKAGE, MONTHLY_PLAN, ANNUAL_PLAN
+  description            String?
+  price                  Decimal              @db.Decimal(10, 2)
+  validityDays           Int                  @default(365)
+  discountPercentage     Decimal              @default(10.00) @db.Decimal(5, 2)
+  walletCreditsIncluded  Decimal              @default(0.00) @db.Decimal(10, 2)
+  loyaltyBonusPoints     Int                  @default(0)
+  allowFamilySharing     Boolean              @default(false)
+  maxFamilyMembers       Int                  @default(1)
+  eligibleCategories     Json?                // Array of Category IDs or "ALL"
+  perks                  Json?                // Array of bullet points e.g. ["20% off all styling", "Free beverage upgrade", "Priority slot booking"]
+  color                  String?              @default("#d97706")
+  isActive               Boolean              @default(true)
+  deletedAt              DateTime?
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+
+  organization           Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customerMemberships    CustomerMembership[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId, type, isActive])
+  @@map("membership_plans")
+}
+
+model CustomerMembership {
+  id                    String          @id @default(uuid())
+  organizationId        String?
+  customerId            String
+  tierId                String?
+  planId                String?
+  membershipCode        String          // e.g. "MEMB-2026-00891"
+  startDate             DateTime        @default(now())
+  expiryDate            DateTime
+  status                String          @default("ACTIVE") // ACTIVE, EXPIRED, FROZEN, CANCELLED
+  pricePaid             Decimal         @default(0.00) @db.Decimal(10, 2)
+  totalSaved            Decimal         @default(0.00) @db.Decimal(10, 2)
+  usageCount            Int             @default(0)
+  walletCreditsGranted  Decimal         @default(0.00) @db.Decimal(10, 2)
+  autoRenew             Boolean         @default(false)
+  notes                 String?
+  isActive              Boolean         @default(true)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  customer              Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tier                  MembershipTier? @relation(fields: [tierId], references: [id], onDelete: SetNull)
+  plan                  MembershipPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+  familyPlan            FamilyPlan?
+
+  @@index([customerId, status])
+  @@index([customerId, isActive])
+  @@map("customer_memberships")
+}
+
+model ServicePackageTemplate {
+  id                 String            @id @default(uuid())
+  organizationId     String
+  name               String            // e.g. "10 Haircuts Session Pass", "Bridal Radiant Glow 6-Pack"
+  code               String            // e.g. "PKG-HAIR-10", "PKG-BRIDAL-06"
+  description        String?
+  serviceId          String?           // Optional primary service linked
+  serviceName        String?
+  totalSessions      Int               @default(10)
+  price              Decimal           @db.Decimal(10, 2)
+  validityDays       Int               @default(180)
+  savingsPercentage  Decimal           @default(15.00) @db.Decimal(5, 2)
+  allowFamilySharing Boolean           @default(true)
+  color              String?           @default("#059669")
+  isActive           Boolean           @default(true)
+  deletedAt          DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  organization       Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customerPackages   CustomerPackage[]
+
+  @@unique([organizationId, code])
+  @@map("service_package_templates")
+}
+
+model CustomerPackageRedemption {
+  id                     String          @id @default(uuid())
+  packageId              String
+  serviceId              String?
+  serviceName            String
+  invoiceId              String?
+  stylistId              String?
+  stylistName            String?
+  redeemedByCustomerId   String          // Primary or family member
+  redeemedByName         String
+  isFamilyMemberRedemption Boolean       @default(false)
+  familyMemberId         String?
+  familyRelationship     String?
+  notes                  String?
+  redeemedAt             DateTime        @default(now())
+
+  package                CustomerPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@index([packageId, redeemedAt])
+  @@map("customer_package_redemptions")
+}
+
+model CustomerWallet {
+  id                    String          @id @default(uuid())
+  organizationId        String
+  customerId            String          @unique
+  currentBalance        Decimal         @default(0.00) @db.Decimal(10, 2)
+  promotionalBalance    Decimal         @default(0.00) @db.Decimal(10, 2)
+  nonPromotionalBalance Decimal         @default(0.00) @db.Decimal(10, 2)
+  totalCredited         Decimal         @default(0.00) @db.Decimal(10, 2)
+  totalDebited          Decimal         @default(0.00) @db.Decimal(10, 2)
+  lastTransactionAt     DateTime?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  organization          Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer              Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, customerId])
+  @@map("customer_wallets")
+}
+
+model CustomerWalletLedgerEntry {
+  id                 String       @id @default(uuid())
+  organizationId     String
+  branchId           String?
+  customerId         String
+  entryType          String       // OPENING_BALANCE, TOPUP_CASH, TOPUP_UPI, TOPUP_CARD, DEBIT_POS, PROMOTIONAL_CREDIT, REFUND_CREDIT, EXPIRY_WRITEOFF, ADJUSTMENT
+  amount             Decimal      @db.Decimal(10, 2) // Positive for credits, Negative for debits/writeoffs
+  promotionalAmount  Decimal      @default(0.00) @db.Decimal(10, 2)
+  balanceBefore      Decimal      @db.Decimal(10, 2)
+  balanceAfter       Decimal      @db.Decimal(10, 2)
+  referenceInvoiceId String?
+  performedByUserId  String?
+  familyMemberId     String?
+  familyMemberName   String?
+  notes              String
+  expiresAt          DateTime?
+  isExpired          Boolean      @default(false)
+  createdAt          DateTime     @default(now())
+
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer           Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, customerId, createdAt])
+  @@index([customerId, entryType])
+  @@map("customer_wallet_ledger_entries")
+}
+
+model LoyaltyTier {
+  id                         String                   @id @default(uuid())
+  organizationId             String
+  tierCode                   String                   // BRONZE, SILVER, GOLD, PLATINUM
+  tierName                   String                   // Bronze Starter, Silver Elite, Gold Prestige, Platinum VIP
+  minSpendRequired           Decimal                  @default(0.00) @db.Decimal(10, 2)
+  minVisitsRequired          Int                      @default(0)
+  pointsPerHundredRupees     Decimal                  @default(1.00) @db.Decimal(5, 2) // e.g. 1.0, 1.25, 1.5, 2.0
+  pointRedemptionValueRupees Decimal                  @default(1.00) @db.Decimal(5, 2) // 1 point = ₹1.00
+  discountPerkPercentage     Decimal                  @default(0.00) @db.Decimal(5, 2)
+  priorityBooking            Boolean                  @default(false)
+  color                      String                   @default("#d97706")
+  icon                       String?                  @default("Award")
+  isActive                   Boolean                  @default(true)
+  createdAt                  DateTime                 @default(now())
+  updatedAt                  DateTime                 @updatedAt
+
+  organization               Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  accounts                   CustomerLoyaltyAccount[]
+
+  @@unique([organizationId, tierCode])
+  @@map("loyalty_tiers")
+}
+
+model CustomerLoyaltyAccount {
+  id                         String                     @id @default(uuid())
+  organizationId             String
+  customerId                 String                     @unique
+  currentTierId              String
+  tierCode                   String                     @default("BRONZE")
+  currentPoints              Int                        @default(0)
+  lifetimePointsEarned       Int                        @default(0)
+  lifetimePointsRedeemed     Int                        @default(0)
+  nextTierProgressPercentage Decimal                    @default(0.00) @db.Decimal(5, 2)
+  tierJoinedAt               DateTime                   @default(now())
+  createdAt                  DateTime                   @default(now())
+  updatedAt                  DateTime                   @updatedAt
+
+  organization               Organization               @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer                   Customer                   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  currentTier                LoyaltyTier                @relation(fields: [currentTierId], references: [id])
+
+  @@index([organizationId, customerId])
+  @@map("customer_loyalty_accounts")
+}
+
+model LoyaltyPointsLedgerEntry {
+  id                  String       @id @default(uuid())
+  organizationId      String
+  branchId            String?
+  customerId          String
+  entryType           String       // EARNED_INVOICE, REDEEMED_POS, BONUS_CAMPAIGN, REFERRAL_BONUS, EXPIRY_WRITEOFF, TIER_UPGRADE_BONUS, ADJUSTMENT
+  points              Int          // Positive for earn, Negative for redeem
+  pointsBefore        Int
+  pointsAfter         Int
+  referenceInvoiceId  String?
+  referredCustomerId  String?
+  notes               String
+  performedByUserId   String?
+  expiresAt           DateTime?
+  createdAt           DateTime     @default(now())
+
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer            Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, customerId, createdAt])
+  @@index([customerId, entryType])
+  @@map("loyalty_points_ledger_entries")
+}
+
+model FamilyPlan {
+  id                     String                    @id @default(uuid())
+  organizationId         String
+  primaryCustomerId      String
+  membershipId           String?                   @unique
+  planName               String                    // e.g. "The Sharma Family Wellness Pool"
+  maxMembers             Int                       @default(5)
+  sharedWalletEnabled    Boolean                   @default(true)
+  sharedPackagesEnabled  Boolean                   @default(true)
+  sharedDiscountEnabled  Boolean                   @default(true)
+  status                 String                    @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt              DateTime                  @default(now())
+  updatedAt              DateTime                  @updatedAt
+
+  organization           Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  primaryCustomer        Customer                  @relation("PrimaryCustomerFamilyPlans", fields: [primaryCustomerId], references: [id], onDelete: Cascade)
+  membership             CustomerMembership?       @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+  members                FamilyMember[]
+  usageRecords           FamilyMemberUsageRecord[]
+
+  @@index([organizationId, primaryCustomerId])
+  @@map("family_plans")
+}
+
+model FamilyMember {
+  id                        String                    @id @default(uuid())
+  familyPlanId              String
+  primaryCustomerId         String
+  memberCustomerId          String?
+  fullName                  String
+  phone                     String
+  relationship              String                    // SPOUSE, CHILD, PARENT, SIBLING, PARTNER, OTHER
+  spendingLimitMonthly      Decimal?                  @db.Decimal(10, 2)
+  isAuthorizedToDebitWallet Boolean                   @default(true)
+  isAuthorizedToUsePackages Boolean                   @default(true)
+  status                    String                    @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt                 DateTime                  @default(now())
+  updatedAt                 DateTime                  @updatedAt
+
+  familyPlan                FamilyPlan                @relation(fields: [familyPlanId], references: [id], onDelete: Cascade)
+  usageRecords              FamilyMemberUsageRecord[]
+
+  @@index([familyPlanId, status])
+  @@map("family_members")
+}
+
+model FamilyMemberUsageRecord {
+  id                   String       @id @default(uuid())
+  familyPlanId         String
+  familyMemberId       String
+  primaryCustomerId    String
+  benefitType          String       // MEMBERSHIP_DISCOUNT, PACKAGE_SESSION, WALLET_DEBIT
+  invoiceId            String?
+  serviceName          String
+  amountSavedOrSpent   Decimal      @db.Decimal(10, 2)
+  usedAt               DateTime     @default(now())
+
+  familyPlan           FamilyPlan   @relation(fields: [familyPlanId], references: [id], onDelete: Cascade)
+  familyMember         FamilyMember @relation(fields: [familyMemberId], references: [id], onDelete: Cascade)
+
+  @@index([familyPlanId, usedAt])
+  @@index([familyMemberId])
+  @@map("family_member_usage_records")
+}
+
+model RetentionExpiryAlert {
+  id                     String       @id @default(uuid())
+  organizationId         String
+  customerId             String
+  customerName           String
+  customerPhone          String
+  benefitType            String       // MEMBERSHIP, PACKAGE, WALLET_PROMO, LOYALTY_POINTS
+  benefitReferenceId     String
+  benefitTitle           String
+  daysUntilExpiry        Int          // 30, 7, 1
+  expiryDate             DateTime
+  status                 String       @default("SCHEDULED") // SCHEDULED, SENT, RENEWED, DISMISSED
+  sentChannel            String?      // WHATSAPP, SMS, EMAIL
+  sentAt                 DateTime?
+  renewalOfferDiscount   Decimal?     @db.Decimal(5, 2)
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer               Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, daysUntilExpiry, status])
+  @@index([customerId, expiryDate])
+  @@map("retention_expiry_alerts")
+}
+
+// -----------------------------------------------------------------------------
+// 10. AUDIT LOGGING
+// -----------------------------------------------------------------------------
+
+model AuditLog {
+  id              String   @id @default(uuid())
+  organizationId  String
+  branchId        String?
+  userId          String?
+  userEmail       String?
+  userRole        String?
+  action          String
+  entity          String
+  entityId        String
+  oldValue        Json?
+  newValue        Json?
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime @default(now())
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch          Branch?      @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  user            User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, entity, entityId])
+  @@index([organizationId, createdAt])
+  @@map("audit_logs")
+}
+
+// -----------------------------------------------------------------------------
+// 11. COMMISSIONS, TARGETS & PAYROLL ENGINE (PHASE 10)
+// -----------------------------------------------------------------------------
+
+model CommissionPlan {
+  id                    String               @id @default(uuid())
+  organizationId        String
+  branchId              String?
+  name                  String               // e.g. "Senior Stylist Progressive Tier", "Retail Accelerator"
+  code                  String               // e.g. "ST-TIER-01", "RET-FLAT-05"
+  description           String?
+  planType              String               @default("TIERED") // PERCENTAGE, FIXED, TIERED, TARGET_ACCELERATOR
+  serviceCommissionRate Decimal              @default(10.00) @db.Decimal(5, 2)
+  retailCommissionRate  Decimal              @default(5.00) @db.Decimal(5, 2)
+  fixedServiceFee       Decimal              @default(0.00) @db.Decimal(10, 2)
+  targetBonusRate       Decimal              @default(2.00) @db.Decimal(5, 2) // Bonus rate on hitting target
+  isActive              Boolean              @default(true)
+  deletedAt             DateTime?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  organization          Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch                Branch?              @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  tierSlabs             CommissionTierSlab[]
+
+  @@unique([organizationId, code])
+  @@map("commission_plans")
+}
+
+model CommissionTierSlab {
+  id                   String         @id @default(uuid())
+  planId               String
+  slabOrder            Int            @default(1)
+  minRevenue           Decimal        @db.Decimal(10, 2) // e.g. 0.00, 50001.00, 100001.00
+  maxRevenue           Decimal?       @db.Decimal(10, 2) // null indicates infinity
+  commissionPercentage Decimal        @db.Decimal(5, 2)  // e.g. 5.00, 7.00, 10.00
+  bonusFixedAmount     Decimal        @default(0.00) @db.Decimal(10, 2)
+  createdAt            DateTime       @default(now())
+
+  plan                 CommissionPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId, slabOrder])
+  @@map("commission_tier_slabs")
+}
+
+model CommissionLedgerEntry {
+  id               String       @id @default(uuid())
+  organizationId   String
+  branchId         String
+  staffId          String
+  invoiceId        String
+  invoiceItemId    String
+  lineItemType     String       @default("SERVICE") // SERVICE, RETAIL, MEMBERSHIP, PACKAGE
+  saleAmount       Decimal      @db.Decimal(10, 2)
+  commissionRate   Decimal      @db.Decimal(5, 2) // Percentage or fixed value recorded at transaction time
+  commissionEarned Decimal      @db.Decimal(10, 2) // Positive for earning, Negative for clawback/reversal
+  status           String       @default("EARNED") // EARNED, PENDING_PAYOUT, PAID, REVERSED, ADJUSTED
+  isClawback       Boolean      @default(false)
+  clawbackReason   String?
+  idempotencyKey   String       @unique // Unique hash: staffId_invoiceItemId_status
+  payoutPeriodId   String?
+  date             DateTime     @default(now())
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch           Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  staff            StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  invoice          Invoice      @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceItem      InvoiceItem  @relation(fields: [invoiceItemId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, branchId, date])
+  @@index([staffId, date])
+  @@index([invoiceId])
+  @@map("commission_ledger_entries")
+}
+
+model StaffPerformanceTarget {
+  id                          String       @id @default(uuid())
+  organizationId              String
+  branchId                    String
+  staffId                     String
+  periodMonth                 String       // Format: "YYYY-MM", e.g. "2026-09"
+  revenueTarget               Decimal      @default(150000.00) @db.Decimal(10, 2)
+  revenueActual               Decimal      @default(0.00) @db.Decimal(10, 2)
+  servicesTarget              Int          @default(60)
+  servicesActual              Int          @default(0)
+  retailTarget                Decimal      @default(25000.00) @db.Decimal(10, 2)
+  retailActual                Decimal      @default(0.00) @db.Decimal(10, 2)
+  membershipTarget            Int          @default(5)
+  membershipActual            Int          @default(0)
+  newCustomersTarget          Int          @default(20)
+  newCustomersActual          Int          @default(0)
+  rebookingTargetPercentage   Decimal      @default(60.00) @db.Decimal(5, 2)
+  rebookingActualPercentage   Decimal      @default(0.00) @db.Decimal(5, 2)
+  ratingTarget                Decimal      @default(4.80) @db.Decimal(3, 2)
+  ratingActual                Decimal      @default(5.00) @db.Decimal(3, 2)
+  overallAchievementPercentage Decimal     @default(0.00) @db.Decimal(5, 2)
+  createdAt                   DateTime     @default(now())
+  updatedAt                   DateTime     @updatedAt
+
+  organization                Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch                      Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  staff                       StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, staffId, periodMonth])
+  @@index([organizationId, branchId, periodMonth])
+  @@map("staff_performance_targets")
+}
+
+model PayrollPeriodSummary {
+  id                   String             @id @default(uuid())
+  organizationId       String
+  branchId             String
+  periodMonth          String             // Format: "YYYY-MM", e.g. "2026-09"
+  totalGrossCommission Decimal            @default(0.00) @db.Decimal(10, 2)
+  totalAdjustments     Decimal            @default(0.00) @db.Decimal(10, 2)
+  totalNetPayable      Decimal            @default(0.00) @db.Decimal(10, 2)
+  status               String             @default("DRAFT") // DRAFT, APPROVED, PROCESSED, EXPORTED
+  exportedAt           DateTime?
+  approvedByUserId     String?
+  notes                String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  organization         Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch               Branch             @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  staffLines           PayrollStaffLine[]
+
+  @@unique([organizationId, branchId, periodMonth])
+  @@index([organizationId, periodMonth])
+  @@map("payroll_period_summaries")
+}
+
+model PayrollStaffLine {
+  id                     String               @id @default(uuid())
+  payrollPeriodId        String
+  staffId                String
+  staffName              String
+  staffCode              String
+  role                   String
+  baseSalary             Decimal              @default(0.00) @db.Decimal(10, 2)
+  serviceCommissionTotal Decimal              @default(0.00) @db.Decimal(10, 2)
+  retailCommissionTotal  Decimal              @default(0.00) @db.Decimal(10, 2)
+  bonusAcceleratorTotal  Decimal              @default(0.00) @db.Decimal(10, 2)
+  grossCommission        Decimal              @default(0.00) @db.Decimal(10, 2)
+  adjustmentsTotal       Decimal              @default(0.00) @db.Decimal(10, 2)
+  adjustmentNotes        String?
+  tdsDeduction           Decimal              @default(0.00) @db.Decimal(10, 2) // 1% or 2% TDS under Section 194J/H simulation
+  netPayable             Decimal              @db.Decimal(10, 2)
+  status                 String               @default("PENDING") // PENDING, APPROVED, PAID
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+
+  payrollPeriod          PayrollPeriodSummary @relation(fields: [payrollPeriodId], references: [id], onDelete: Cascade)
+  staff                  StaffProfile         @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@index([payrollPeriodId])
+  @@index([staffId])
+  @@map("payroll_staff_lines")
+}
+
+// -----------------------------------------------------------------------------
+// 12. MARKETING AUTOMATION, COMMUNICATION & REVIEWS (PHASE 12)
+// -----------------------------------------------------------------------------
+
+model MarketingCampaign {
+  id                 String            @id @default(uuid())
+  organizationId     String
+  branchId           String?
+  name               String            // e.g. "Festive Diwali Glow Blast", "Monsoon Keratin Flash Sale"
+  code               String            // e.g. "CMP-DIWALI-2026", "CMP-WINBACK-Q3"
+  audienceSegment    String            @default("ALL") // ALL, NEW, RETURNING, VIP, INACTIVE, HIGH_VALUE, MEMBERSHIP, FREQUENT
+  channel            String            @default("WHATSAPP") // WHATSAPP, SMS, EMAIL, OMNICHANNEL
+  messageTemplate    String            // Body with dynamic merge tags {{customerName}}, {{branchName}}, etc.
+  discountCode       String?
+  discountPercentage Decimal?          @db.Decimal(5, 2)
+  scheduledAt        DateTime?
+  status             String            @default("DRAFT") // DRAFT, SCHEDULED, SENDING, COMPLETED, CANCELLED
+  totalAudience      Int               @default(0)
+  totalSent          Int               @default(0)
+  totalDelivered     Int               @default(0)
+  totalRead          Int               @default(0)
+  totalFailed        Int               @default(0)
+  totalClicked       Int               @default(0)
+  totalConverted     Int               @default(0)
+  revenueGenerated   Decimal           @default(0.00) @db.Decimal(10, 2)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  organization       Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch             Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  messages           OutboundMessage[]
+
+  @@unique([organizationId, code])
+  @@index([organizationId, status])
+  @@map("marketing_campaigns")
+}
+
+model AutomationWorkflowRule {
+  id                    String       @id @default(uuid())
+  organizationId        String
+  name                  String       // e.g. "Instant Booking Confirmation", "Post-Service Review Request"
+  triggerEvent          String       // APPOINTMENT_BOOKED, APPOINTMENT_COMPLETED, PAYMENT_COMPLETED, MEMBERSHIP_EXPIRING, CUSTOMER_INACTIVE_60D, BIRTHDAY, ANNIVERSARY
+  channel               String       @default("WHATSAPP") // WHATSAPP, SMS, EMAIL
+  delayMinutes          Int          @default(0)
+  templateBody          String
+  isActive              Boolean      @default(true)
+  audienceSegmentFilter String?      @default("ALL")
+  respectConsent        Boolean      @default(true)
+  totalTriggered        Int          @default(0)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, triggerEvent, isActive])
+  @@map("automation_workflow_rules")
+}
+
+model OutboundMessage {
+  id                 String             @id @default(uuid())
+  organizationId     String
+  branchId           String?
+  customerId         String?
+  campaignId         String?
+  workflowRuleId     String?
+  messageType        String             // APPOINTMENT_CONFIRMATION, APPOINTMENT_REMINDER, APPOINTMENT_CANCELLATION, INVOICE_RECEIPT, PAYMENT_SUCCESS, MEMBERSHIP_EXPIRY, BIRTHDAY_GREETING, ANNIVERSARY_GREETING, REBOOKING_REMINDER, WIN_BACK, MARKETING_PROMOTION, REVIEW_REQUEST
+  channel            String             // WHATSAPP, SMS, EMAIL
+  providerName       String             // WHATSAPP_CLOUD_API, MSG91, TWILIO, RESEND, SENDGRID, AWS_SES
+  providerMessageId  String?
+  recipientPhone     String?
+  recipientEmail     String?
+  recipientName      String
+  messageContent     String
+  status             String             @default("QUEUED") // QUEUED, SENT, DELIVERED, READ, FAILED, OPTED_OUT
+  errorMessage       String?
+  sentAt             DateTime?
+  deliveredAt        DateTime?
+  readAt             DateTime?
+  createdAt          DateTime           @default(now())
+
+  organization       Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer           Customer?          @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  campaign           MarketingCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, createdAt])
+  @@index([customerId, messageType])
+  @@map("outbound_messages")
+}
+
+model ComplaintTicket {
+  id                  String          @id @default(uuid())
+  organizationId      String
+  branchId            String?
+  customerId          String
+  customerName        String
+  customerPhone       String
+  reviewId            String?         @unique
+  appointmentId       String?
+  severity            String          @default("HIGH") // LOW, MEDIUM, HIGH, CRITICAL
+  rootCauseCategory   String          @default("SERVICE_QUALITY") // SERVICE_QUALITY, STYLIST_BEHAVIOR, WAIT_TIME, BILLING_DISPUTE, HYGIENE, AMBIENCE, OTHER
+  complaintDetails    String
+  assignedManagerId   String?
+  assignedManagerName String?
+  status              String          @default("OPEN") // OPEN, INVESTIGATING, CONTACTED_CLIENT, COMPENSATION_OFFERED, RESOLVED, CLOSED
+  compensationType    String?         // WALLET_CREDIT, FREE_SERVICE, DISCOUNT_VOUCHER, REFUND, APOLOGY_ONLY
+  compensationValue   Decimal?        @db.Decimal(10, 2)
+  managerNotes        String?
+  resolutionSummary   String?
+  resolvedAt          DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  organization        Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer            Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  review              CustomerReview? @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status])
+  @@index([customerId, status])
+  @@map("complaint_tickets")
+}
+
+model CommunicationPreference {
+  id                          String       @id @default(uuid())
+  organizationId              String
+  customerId                  String       @unique
+  allowMarketingWhatsapp      Boolean      @default(true)
+  allowMarketingSms           Boolean      @default(true)
+  allowMarketingEmail         Boolean      @default(true)
+  allowTransactionalMessages  Boolean      @default(true)
+  optedOutAt                  DateTime?
+  optOutReason                String?
+  preferredChannel            String       @default("WHATSAPP") // WHATSAPP, SMS, EMAIL
+  preferredLanguage           String       @default("en")
+  createdAt                   DateTime     @default(now())
+  updatedAt                   DateTime     @updatedAt
+
+  organization                Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer                    Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, customerId])
+  @@map("communication_preferences")
+}
+
+// -----------------------------------------------------------------------------
+// 13. FINANCE, EXPENSES, FISCAL PERIODS & REPORTING
+// -----------------------------------------------------------------------------
+
+model Expense {
+  id                  String       @id @default(uuid())
+  organizationId      String
+  branchId            String
+  category            String       // RENT, ELECTRICITY, SALARY, SUPPLIES, MARKETING, MAINTENANCE, EQUIPMENT, SOFTWARE, OTHER
+  vendorName          String
+  invoiceNumber       String?
+  amount              Decimal      @db.Decimal(10, 2)
+  taxAmount           Decimal      @default(0) @db.Decimal(10, 2)
+  totalAmount         Decimal      @db.Decimal(10, 2)
+  expenseDate         DateTime     @default(now())
+  dueDate             DateTime?
+  paidDate            DateTime?
+  paymentMethod       String?      // UPI, BANK_TRANSFER, CREDIT_CARD, CASH, CHEQUE, PETTY_CASH
+  description         String?
+  receiptUrl          String?
+  status              String       @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, REJECTED, PAID, CANCELLED
+  submittedById       String?
+  submittedByName     String?
+  approvedById        String?
+  approvedByName      String?
+  approvedAt          DateTime?
+  rejectedReason      String?
+  paidReference       String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch              Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, branchId, category])
+  @@index([organizationId, status, expenseDate])
+  @@map("expenses")
+}
+
+model FinancialPeriod {
+  id                  String       @id @default(uuid())
+  organizationId      String
+  branchId            String?
+  fiscalYear          String       // e.g. "FY 2026-27"
+  month               Int          // 1 to 12
+  monthName           String       // e.g. "September 2026"
+  quarter             String       // Q1, Q2, Q3, Q4
+  status              String       @default("OPEN") // OPEN, CLOSED, LOCKED
+  totalRevenue        Decimal      @default(0) @db.Decimal(12, 2)
+  totalExpenses       Decimal      @default(0) @db.Decimal(12, 2)
+  netProfit           Decimal      @default(0) @db.Decimal(12, 2)
+  lockedById          String?
+  lockedByName        String?
+  lockedAt            DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  branch              Branch?      @relation(fields: [branchId], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, branchId, fiscalYear, month])
+  @@index([organizationId, fiscalYear, quarter])
+  @@map("financial_periods")
+}
+
+// -----------------------------------------------------------------------------
+// 14. RETAIL E-COMMERCE & OMNICHANNEL ORDERS (PHASE 15)
+// -----------------------------------------------------------------------------
+
+model RetailOrder {
+  id                    String            @id @default(uuid())
+  orderNumber           String            // e.g. "HIVE-ORD-2026-00892"
+  organizationId        String
+  customerId            String
+  branchId              String?           // Pickup or fulfillment branch
+  fulfillmentType       String            @default("HOME_DELIVERY") // "BRANCH_PICKUP", "HOME_DELIVERY"
+  
+  // Branch Pickup Fields
+  pickupBranchId        String?
+  pickupDate            DateTime?
+  pickupSlot            String?           // "11:00 AM – 02:00 PM"
+  pickupOtp             String?           // 4-digit OTP e.g. "4921"
+  readyForPickupAt      DateTime?
+  collectedAt           DateTime?
+  verifiedByStaffId     String?
+  
+  // Home Delivery Fields
+  shippingAddress       Json?             // { fullName, phone, addressLine1, addressLine2, city, state, pincode }
+  deliveryProvider      String?           // "INTERNAL_FLEET", "DUNZO", "SHADOWFAX", "DELHIVERY", "BLUEDART"
+  trackingNumber        String?
+  trackingUrl           String?
+  estimatedDeliveryDate DateTime?
+  dispatchedAt          DateTime?
+  deliveredAt           DateTime?
+  
+  // Financials
+  subtotal              Decimal           @db.Decimal(10, 2)
+  taxAmount             Decimal           @default(0.00) @db.Decimal(10, 2)
+  discountAmount        Decimal           @default(0.00) @db.Decimal(10, 2)
+  couponCode            String?
+  walletDebitedAmount   Decimal           @default(0.00) @db.Decimal(10, 2)
+  loyaltyDiscountAmount Decimal           @default(0.00) @db.Decimal(10, 2)
+  deliveryFee           Decimal           @default(0.00) @db.Decimal(10, 2)
+  grandTotal            Decimal           @db.Decimal(10, 2)
+  
+  // Payment
+  paymentStatus         String            @default("PAID") // "PENDING", "PAID", "REFUNDED", "FAILED"
+  paymentMethod         String            @default("UPI") // "UPI", "CARD", "WALLET", "PAY_ON_PICKUP", "COD"
+  transactionReference  String?
+  
+  // Order Status Lifecycle
+  status                String            @default("PLACED") // "PLACED", "CONFIRMED", "PACKED", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED", "RETURNED"
+  statusHistory         Json?             // Array of { status, timestamp, title, description, updatedBy }
+  notes                 String?
+  
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  organization          Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer              Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  branch                Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  items                 RetailOrderItem[]
+
+  @@unique([organizationId, orderNumber])
+  @@index([organizationId, status])
+  @@index([customerId, createdAt])
+  @@index([branchId, status])
+  @@map("retail_orders")
+}
+
+model RetailOrderItem {
+  id              String      @id @default(uuid())
+  orderId         String
+  productId       String
+  productName     String
+  productSku      String
+  productBrand    String?
+  productImageUrl String?
+  quantity        Int         @default(1)
+  unitPrice       Decimal     @db.Decimal(10, 2)
+  mrp             Decimal     @db.Decimal(10, 2)
+  taxRate         Decimal     @default(18.00) @db.Decimal(5, 2)
+  taxAmount       Decimal     @default(0.00) @db.Decimal(10, 2)
+  totalPrice      Decimal     @db.Decimal(10, 2)
+  createdAt       DateTime    @default(now())
+
+  order           RetailOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("retail_order_items")
+}
+
+// -----------------------------------------------------------------------------
+// 19. HIVE SALON AI — AUDIT LOG & COMPLIANCE
+// -----------------------------------------------------------------------------
+
+model AIAuditLog {
+  id              String       @id @default(uuid())
+  organizationId  String
+  userId          String
+  branchId        String?
+  question        String
+  intent          String       @default("CUSTOM_ANALYTICS")
+  generatedSql    String
+  executionTimeMs Int          @default(0)
+  rowCount        Int          @default(0)
+  status          String       @default("SUCCESS") // "SUCCESS", "REJECTED_SECURITY", "ERROR"
+  errorMessage    String?
+  securityContext Json?        // Snapshot of { organizationId, branchId, role, permissions }
+  createdAt       DateTime     @default(now())
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch          Branch?      @relation(fields: [branchId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([userId, createdAt])
+  @@index([organizationId, status])
+  @@map("ai_audit_logs")
+}
+
+
+

@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2022",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": false,
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@hive/types": ["../../packages/types/src"],
+      "@hive/validation": ["../../packages/validation/src"],
+      "@hive/config": ["../../packages/config/src"],
+      "@hive/utilities": ["../../packages/utilities/src"],
+      "@hive/events": ["../../packages/events/src"],
+      "@hive/auth": ["../../packages/auth/src"],
+      "@hive/database": ["../../packages/database/src"]
+    }
+  },
+  "include": ["src/**/*"]
+}
