@@ -17,36 +17,84 @@ import {
   BarChart3,
   Settings,
   Building2,
+  Sparkles,
+  ClipboardList,
+  Clock,
+  FlaskConical,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export const Sidebar: React.FC = () => {
-  const { activePortal } = useAuth();
+  const { user, activePortal, isSuperAdmin, isManager, isFrontDesk, isStylist } = useAuth();
 
-  const frontDeskNav = [
-    { name: 'Dashboard', path: '/front-desk/dashboard', icon: LayoutDashboard },
-    { name: 'Appointments', path: '/front-desk/calendar', icon: Calendar },
-    { name: 'Live Queue', path: '/front-desk/queue', icon: UserCheck },
-    { name: 'POS & Billing', path: '/front-desk/pos', icon: CreditCard },
-    { name: 'Customer CRM', path: '/front-desk/customers', icon: Users },
-    { name: 'Invoices', path: '/front-desk/invoices', icon: Receipt },
-    { name: 'Memberships', path: '/front-desk/memberships', icon: Gift },
-    { name: 'Loyalty & Rewards', path: '/front-desk/loyalty', icon: Award },
-  ];
+  // Navigation configurations based on role & portal
+  const getNavItems = () => {
+    // 1. Stylist Navigation
+    if (isStylist) {
+      return [
+        { name: 'Stylist Station', path: '/stylist/station', icon: Scissors },
+        { name: 'My Schedule', path: '/front-desk/calendar', icon: Calendar },
+        { name: 'Live Floor Queue', path: '/front-desk/queue', icon: Clock },
+        { name: 'Client CRM & Formulas', path: '/front-desk/customers', icon: Users },
+      ];
+    }
 
-  const backOfficeNav = [
-    { name: 'Executive Overview', path: '/back-office/overview', icon: BarChart3 },
-    { name: 'Branches & Hierarchy', path: '/back-office/branches', icon: Building2 },
-    { name: 'Services Catalog', path: '/back-office/services', icon: Scissors },
-    { name: 'Staff & HR Roster', path: '/back-office/team', icon: Users },
-    { name: 'Inventory & Stock', path: '/back-office/inventory', icon: ShoppingBag },
-    { name: 'Marketing & Retention', path: '/back-office/marketing', icon: Send },
-    { name: 'Expenses & Finance', path: '/back-office/finance', icon: DollarSign },
-    { name: 'Analytics & Reports', path: '/back-office/reports', icon: Layers },
-    { name: 'System Settings', path: '/back-office/settings', icon: Settings },
-  ];
+    // 2. Front Desk Coordinator (Only Front-Desk Operational Modules)
+    if (isFrontDesk || activePortal === 'front-desk') {
+      return [
+        { name: 'Front Desk Hub', path: '/front-desk/dashboard', icon: LayoutDashboard },
+        { name: 'Appointments Calendar', path: '/front-desk/calendar', icon: Calendar },
+        { name: 'Live Floor Queue', path: '/front-desk/queue', icon: UserCheck },
+        { name: 'POS Register & Billing', path: '/front-desk/pos', icon: CreditCard },
+        { name: 'Customer CRM 360°', path: '/front-desk/customers', icon: Users },
+        { name: 'Invoices & Receipts', path: '/front-desk/invoices', icon: Receipt },
+        { name: 'VIP Memberships', path: '/front-desk/memberships', icon: Gift },
+        { name: 'Loyalty & Rewards', path: '/front-desk/loyalty', icon: Award },
+      ];
+    }
 
-  const navItems = activePortal === 'front-desk' ? frontDeskNav : backOfficeNav;
+    // 3. Branch Manager Back-Office (Scoped to single branch)
+    if (isManager) {
+      return [
+        { name: 'Branch Manager Hub', path: '/back-office/overview', icon: BarChart3 },
+        { name: 'Staff & Attendance', path: '/back-office/team', icon: Users },
+        { name: 'Branch Services Menu', path: '/back-office/services', icon: Scissors },
+        { name: 'In-Salon Stock & Usage', path: '/back-office/inventory', icon: ShoppingBag },
+        { name: 'Petty Cash & Expenses', path: '/back-office/finance', icon: DollarSign },
+        { name: 'Daily Branch Reports', path: '/back-office/reports', icon: Layers },
+      ];
+    }
+
+    // 4. Super Admin Back-Office (Full Multi-Branch Enterprise Suite)
+    return [
+      { name: 'Executive Overview', path: '/back-office/overview', icon: BarChart3 },
+      { name: 'Branches & Hierarchy', path: '/back-office/branches', icon: Building2 },
+      { name: 'Services Catalog', path: '/back-office/services', icon: Scissors },
+      { name: 'Staff & HR Roster', path: '/back-office/team', icon: Users },
+      { name: 'Inventory & Stock', path: '/back-office/inventory', icon: ShoppingBag },
+      { name: 'Marketing & Retention', path: '/back-office/marketing', icon: Send },
+      { name: 'Expenses & Finance', path: '/back-office/finance', icon: DollarSign },
+      { name: 'Analytics & Reports', path: '/back-office/reports', icon: Layers },
+      { name: 'System & Security Settings', path: '/back-office/settings', icon: Settings },
+    ];
+  };
+
+  const navItems = getNavItems();
+
+  const getPortalLabel = () => {
+    if (isStylist) return '✂️ Stylist Workstation';
+    if (isFrontDesk) return '⚡ Front Desk & POS';
+    if (activePortal === 'front-desk') return '⚡ Front Desk & POS';
+    if (isManager) return '🏢 Branch Operations ERP';
+    return '🏛️ Central Back-Office ERP';
+  };
+
+  const getSectionTitle = () => {
+    if (isStylist) return 'Stylist Tools';
+    if (isFrontDesk || activePortal === 'front-desk') return 'Operational Modules';
+    if (isManager) return 'Branch Management';
+    return 'Enterprise Modules';
+  };
 
   return (
     <aside className="w-64 bg-slate-900/95 border-r border-slate-800 flex flex-col shrink-0 h-screen sticky top-0">
@@ -59,8 +107,8 @@ export const Sidebar: React.FC = () => {
           <h1 className="font-extrabold tracking-tight text-white flex items-center gap-1.5 text-base">
             HIVE <span className="text-brand-400 font-semibold">SALON</span>
           </h1>
-          <p className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">
-            {activePortal === 'front-desk' ? '⚡ Front Desk & POS' : '🏛️ Central Back-Office ERP'}
+          <p className="text-[10px] uppercase tracking-wider font-semibold text-brand-400/90">
+            {getPortalLabel()}
           </p>
         </div>
       </div>
@@ -68,7 +116,7 @@ export const Sidebar: React.FC = () => {
       {/* Navigation Links */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1.5">
         <div className="px-3 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-          {activePortal === 'front-desk' ? 'Operational Modules' : 'Enterprise Modules'}
+          {getSectionTitle()}
         </div>
         {navItems.map((item) => {
           const Icon = item.icon;

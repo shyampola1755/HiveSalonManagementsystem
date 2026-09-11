@@ -12,7 +12,7 @@ export interface User {
   id: string;
   email: string;
   fullName: string;
-  role: string;
+  role: string; // 'SUPER_ADMIN' | 'ORG_ADMIN' | 'BRANCH_MANAGER' | 'FRONT_DESK' | 'STYLIST'
   avatarUrl?: string;
   primaryBranchId?: string;
   organization?: {
@@ -30,7 +30,12 @@ interface AuthContextType {
   activeBranchId: string | null;
   activePortal: 'front-desk' | 'back-office';
   isLoading: boolean;
-  login: (token: string, userData: User) => void;
+  isSuperAdmin: boolean;
+  isManager: boolean;
+  isFrontDesk: boolean;
+  isStylist: boolean;
+  canAccessBackOffice: boolean;
+  login: (token: string, userData: User) => string;
   logout: () => void;
   setActiveBranchId: (branchId: string) => void;
   setActivePortal: (portal: 'front-desk' | 'back-office') => void;
@@ -51,12 +56,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [activePortal, setActivePortalState] = useState<'front-desk' | 'back-office'>(() => {
-    return (localStorage.getItem('hive_portal') as any) || 'front-desk';
+    if (user?.role === 'SUPER_ADMIN' || user?.role === 'ORG_ADMIN' || user?.role === 'BRANCH_MANAGER') {
+      const savedPortal = localStorage.getItem('hive_portal') as 'front-desk' | 'back-office';
+      return savedPortal || 'back-office';
+    }
+    return 'front-desk';
   });
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const login = (newToken: string, userData: User) => {
+  // Role booleans
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ORG_ADMIN';
+  const isManager = user?.role === 'BRANCH_MANAGER';
+  const isFrontDesk = user?.role === 'FRONT_DESK';
+  const isStylist = user?.role === 'STYLIST';
+  const canAccessBackOffice = isSuperAdmin || isManager;
+
+  const login = (newToken: string, userData: User): string => {
     setToken(newToken);
     setUser(userData);
     localStorage.setItem('hive_token', newToken);
@@ -66,6 +82,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (branch) {
       setActiveBranchId(String(branch));
     }
+
+    // Determine initial portal and landing destination based on role
+    let defaultPortal: 'front-desk' | 'back-office' = 'front-desk';
+    let targetRoute = '/front-desk/dashboard';
+
+    if (userData.role === 'SUPER_ADMIN' || userData.role === 'ORG_ADMIN') {
+      defaultPortal = 'back-office';
+      targetRoute = '/back-office/overview';
+    } else if (userData.role === 'BRANCH_MANAGER') {
+      defaultPortal = 'back-office';
+      targetRoute = '/back-office/overview';
+    } else if (userData.role === 'STYLIST') {
+      defaultPortal = 'front-desk';
+      targetRoute = '/stylist/station';
+    } else {
+      defaultPortal = 'front-desk';
+      targetRoute = '/front-desk/dashboard';
+    }
+
+    setActivePortal(defaultPortal);
+    return targetRoute;
   };
 
   const logout = () => {
@@ -74,6 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('hive_token');
     localStorage.removeItem('hive_user');
     localStorage.removeItem('hive_active_branch');
+    localStorage.removeItem('hive_portal');
   };
 
   const setActiveBranchId = (branchId: string) => {
@@ -96,7 +134,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             localStorage.setItem('hive_user', JSON.stringify(res.data.user));
           }
         } catch (e) {
-          // Token expired or invalid
           logout();
         }
       }
@@ -113,6 +150,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         activeBranchId,
         activePortal,
         isLoading,
+        isSuperAdmin,
+        isManager,
+        isFrontDesk,
+        isStylist,
+        canAccessBackOffice,
         login,
         logout,
         setActiveBranchId,

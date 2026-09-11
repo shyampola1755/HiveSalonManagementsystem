@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { Lock, Mail, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Lock, Mail, Sparkles, ArrowRight, ShieldCheck, User, Scissors, Building2 } from 'lucide-react';
 
 export const LoginView: React.FC = () => {
   const [email, setEmail] = useState('admin@hivesalon.com');
@@ -20,9 +20,9 @@ export const LoginView: React.FC = () => {
     try {
       const res = await apiClient.post('/auth/login', { email, password });
       if (res.data.success) {
-        login(res.data.token, res.data.user);
+        const targetRoute = login(res.data.token, res.data.user);
         showToast(`Welcome back, ${res.data.user.fullName}!`, 'success');
-        navigate('/front-desk/dashboard');
+        navigate(targetRoute);
       }
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Login failed. Please check credentials.', 'error');
@@ -103,33 +103,63 @@ export const LoginView: React.FC = () => {
           </button>
         </form>
 
-        {/* Quick Demo Logins */}
+        {/* Quick Demo Logins for All 4 Roles */}
         <div className="mt-8 pt-6 border-t border-slate-800">
           <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3">
             <ShieldCheck className="w-3.5 h-3.5 text-brand-400" />
-            Quick Demo Profiles
+            Quick Demo Profiles (Click to Auto-fill)
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <button
               type="button"
               onClick={() => quickFill('admin@hivesalon.com')}
-              className="px-2 py-1.5 rounded-lg text-xs font-medium bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-brand-300 border border-slate-700/60 transition-colors"
+              className={`p-2 rounded-xl text-center border transition-all ${
+                email === 'admin@hivesalon.com'
+                  ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 shadow-sm'
+                  : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border-slate-800'
+              }`}
             >
-              Super Admin
+              <div className="text-[11px] font-bold">Super Admin</div>
+              <div className="text-[9px] text-slate-400 mt-0.5">Enterprise BI</div>
             </button>
+
             <button
               type="button"
               onClick={() => quickFill('manager@hivesalon.com')}
-              className="px-2 py-1.5 rounded-lg text-xs font-medium bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-brand-300 border border-slate-700/60 transition-colors"
+              className={`p-2 rounded-xl text-center border transition-all ${
+                email === 'manager@hivesalon.com'
+                  ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-sm'
+                  : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border-slate-800'
+              }`}
             >
-              Branch Mgr
+              <div className="text-[11px] font-bold">Branch Mgr</div>
+              <div className="text-[9px] text-slate-400 mt-0.5">Floor Hub</div>
             </button>
+
             <button
               type="button"
               onClick={() => quickFill('frontdesk@hivesalon.com')}
-              className="px-2 py-1.5 rounded-lg text-xs font-medium bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-brand-300 border border-slate-700/60 transition-colors"
+              className={`p-2 rounded-xl text-center border transition-all ${
+                email === 'frontdesk@hivesalon.com'
+                  ? 'bg-sky-500/20 border-sky-500/50 text-sky-300 shadow-sm'
+                  : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border-slate-800'
+              }`}
             >
-              Front Desk
+              <div className="text-[11px] font-bold">Front Desk</div>
+              <div className="text-[9px] text-slate-400 mt-0.5">POS & Queue</div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => quickFill('vikram@hivesalon.com')}
+              className={`p-2 rounded-xl text-center border transition-all ${
+                email === 'vikram@hivesalon.com'
+                  ? 'bg-rose-500/20 border-rose-500/50 text-rose-300 shadow-sm'
+                  : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border-slate-800'
+              }`}
+            >
+              <div className="text-[11px] font-bold">Stylist</div>
+              <div className="text-[9px] text-slate-400 mt-0.5">Chair & Formulas</div>
             </button>
           </div>
         </div>

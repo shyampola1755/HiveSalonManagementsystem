@@ -16,6 +16,9 @@ import { InvoicesView } from './views/front-desk/InvoicesView';
 import { MembershipsView } from './views/front-desk/MembershipsView';
 import { LoyaltyView } from './views/front-desk/LoyaltyView';
 
+// Stylist Station View
+import { StylistView } from './views/stylist/StylistView';
+
 // Portal 2: Back Office ERP Views
 import { OverviewView } from './views/back-office/OverviewView';
 import { BranchesView } from './views/back-office/BranchesView';
@@ -28,7 +31,7 @@ import { ReportsView } from './views/back-office/ReportsView';
 import { SettingsView } from './views/back-office/SettingsView';
 
 export const App: React.FC = () => {
-  const { token, isLoading } = useAuth();
+  const { token, isLoading, canAccessBackOffice, isStylist, isSuperAdmin, isManager } = useAuth();
 
   if (isLoading) {
     return (
@@ -41,12 +44,22 @@ export const App: React.FC = () => {
     );
   }
 
+  const getDefaultRoute = () => {
+    if (!token) return '/login';
+    if (isStylist) return '/stylist/station';
+    if (canAccessBackOffice) return '/back-office/overview';
+    return '/front-desk/dashboard';
+  };
+
   return (
     <Routes>
-      <Route path="/login" element={!token ? <LoginView /> : <Navigate to="/front-desk/dashboard" />} />
+      <Route path="/login" element={!token ? <LoginView /> : <Navigate to={getDefaultRoute()} />} />
 
       {/* Protected Routes inside AppShell */}
       <Route element={token ? <AppShell /> : <Navigate to="/login" />}>
+        {/* Stylist Specific */}
+        <Route path="/stylist/station" element={<StylistView />} />
+
         {/* Portal 1: Front Desk & POS */}
         <Route path="/front-desk/dashboard" element={<DashboardView />} />
         <Route path="/front-desk/calendar" element={<CalendarView />} />
@@ -57,20 +70,47 @@ export const App: React.FC = () => {
         <Route path="/front-desk/memberships" element={<MembershipsView />} />
         <Route path="/front-desk/loyalty" element={<LoyaltyView />} />
 
-        {/* Portal 2: Back Office ERP */}
-        <Route path="/back-office/overview" element={<OverviewView />} />
-        <Route path="/back-office/branches" element={<BranchesView />} />
-        <Route path="/back-office/services" element={<ServicesView />} />
-        <Route path="/back-office/team" element={<TeamView />} />
-        <Route path="/back-office/inventory" element={<InventoryView />} />
-        <Route path="/back-office/marketing" element={<MarketingView />} />
-        <Route path="/back-office/finance" element={<FinanceView />} />
-        <Route path="/back-office/reports" element={<ReportsView />} />
-        <Route path="/back-office/settings" element={<SettingsView />} />
+        {/* Portal 2: Back Office ERP (Protected by canAccessBackOffice) */}
+        <Route
+          path="/back-office/overview"
+          element={canAccessBackOffice ? <OverviewView /> : <Navigate to="/front-desk/dashboard" />}
+        />
+        <Route
+          path="/back-office/branches"
+          element={isSuperAdmin ? <BranchesView /> : <Navigate to="/back-office/overview" />}
+        />
+        <Route
+          path="/back-office/services"
+          element={canAccessBackOffice ? <ServicesView /> : <Navigate to="/front-desk/dashboard" />}
+        />
+        <Route
+          path="/back-office/team"
+          element={canAccessBackOffice ? <TeamView /> : <Navigate to="/front-desk/dashboard" />}
+        />
+        <Route
+          path="/back-office/inventory"
+          element={canAccessBackOffice ? <InventoryView /> : <Navigate to="/front-desk/dashboard" />}
+        />
+        <Route
+          path="/back-office/marketing"
+          element={canAccessBackOffice ? <MarketingView /> : <Navigate to="/front-desk/dashboard" />}
+        />
+        <Route
+          path="/back-office/finance"
+          element={canAccessBackOffice ? <FinanceView /> : <Navigate to="/front-desk/dashboard" />}
+        />
+        <Route
+          path="/back-office/reports"
+          element={canAccessBackOffice ? <ReportsView /> : <Navigate to="/front-desk/dashboard" />}
+        />
+        <Route
+          path="/back-office/settings"
+          element={isSuperAdmin ? <SettingsView /> : <Navigate to="/back-office/overview" />}
+        />
       </Route>
 
       {/* Fallback Catch-all */}
-      <Route path="*" element={<Navigate to={token ? '/front-desk/dashboard' : '/login'} replace />} />
+      <Route path="*" element={<Navigate to={getDefaultRoute()} replace />} />
     </Routes>
   );
 };
