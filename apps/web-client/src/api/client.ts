@@ -300,16 +300,13 @@ apiClient.interceptors.request.use((config) => {
 });
 
 // Response interceptor with graceful fallback & full reactive mock DB for Vercel demo environments
-apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const config = error.config;
-    if (!config) return Promise.reject(error);
+const handleMockFallback = async (config: any): Promise<any> => {
+  if (!config) return Promise.reject(new Error('No config provided'));
 
-    const url = config.url || '';
-    const method = (config.method || 'get').toLowerCase();
+  const url = config.url || '';
+  const method = (config.method || 'get').toLowerCase();
 
-    console.warn(`[API Fallback] Request to ${url} handled by reactive local mock DB.`);
+  console.warn(`[API Fallback] Request to ${url} handled by reactive local mock DB.`);
 
     // 1. Auth Endpoints
     if (url.includes('/auth/login')) {
@@ -935,6 +932,22 @@ apiClient.interceptors.response.use(
         message: 'Fallback response',
       },
     };
+};
+
+apiClient.interceptors.response.use(
+  (response) => {
+    // If Vercel rewrites unmatched /api/v1/* routes to index.html (string containing HTML), route it to mock handler!
+    if (typeof response.data === 'string' && (response.data.trim().startsWith('<!doctype html') || response.data.trim().startsWith('<html') || response.data.includes('<div id="root">'))) {
+      return handleMockFallback(response.config);
+    }
+    return response;
+  },
+  async (error) => {
+    if (error.config) {
+      return handleMockFallback(error.config);
+    }
+    return Promise.reject(error);
   }
 );
+
 
