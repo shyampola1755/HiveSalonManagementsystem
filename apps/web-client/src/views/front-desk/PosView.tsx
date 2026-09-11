@@ -253,8 +253,19 @@ export const PosView: React.FC = () => {
                 <div className="text-xs font-bold text-slate-200 group-hover:text-brand-300 transition-colors line-clamp-2">
                   {item.name}
                 </div>
-                <div className="text-[11px] text-slate-500 mt-1">
-                  {activeTab === 'SERVICES' ? `${item.durationMinutes} mins` : item.brand}
+                <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+                  <span>{activeTab === 'SERVICES' ? `${item.durationMinutes} mins` : item.brand}</span>
+                  {activeTab === 'PRODUCTS' && (
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                        (item.currentQuantity ?? 0) > 0
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                      }`}
+                    >
+                      {(item.currentQuantity ?? 0) > 0 ? `${item.currentQuantity} in stock` : 'Out of stock'}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex items-center justify-between mt-4 pt-2 border-t border-slate-800/60">

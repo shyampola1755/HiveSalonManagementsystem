@@ -1,6 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "buildCommand": "npx turbo run build --filter=@hive/web-admin...",
-  "outputDirectory": "apps/web-admin/.next"
+  "framework": "vite",
+  "buildCommand": "npm run --workspace=@hive/web-client build",
+  "outputDirectory": "apps/web-client/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }

@@ -137,3 +137,77 @@ const StockLedgerEntrySchema = new Schema<IStockLedgerEntry>(
 );
 
 export const StockLedgerEntry = mongoose.model<IStockLedgerEntry>('StockLedgerEntry', StockLedgerEntrySchema);
+
+// Branch Inventory Order Request & Dispatch Flow
+export interface IInventoryOrderItem {
+  productId: Types.ObjectId;
+  productName: string;
+  sku: string;
+  brand?: string;
+  requestedQuantity: number;
+  dispatchedQuantity?: number;
+  receivedQuantity?: number;
+}
+
+export interface IInventoryOrder extends Document {
+  organizationId: Types.ObjectId;
+  orderNumber: string;
+  branchId: Types.ObjectId;
+  branchName: string;
+  requestedByUserId: Types.ObjectId;
+  requestedByUserName: string;
+  items: IInventoryOrderItem[];
+  status: 'PENDING' | 'DISPATCHED' | 'RECEIVED' | 'REJECTED';
+  notes?: string;
+  dispatchNotes?: string;
+  receiveNotes?: string;
+  dispatchedAt?: Date;
+  dispatchedByUserId?: Types.ObjectId;
+  dispatchedByUserName?: string;
+  receivedAt?: Date;
+  receivedByUserId?: Types.ObjectId;
+  receivedByUserName?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const InventoryOrderSchema = new Schema<IInventoryOrder>(
+  {
+    organizationId: { type: Schema.Types.ObjectId, ref: 'Organization', required: true, index: true },
+    orderNumber: { type: String, required: true, unique: true, index: true },
+    branchId: { type: Schema.Types.ObjectId, ref: 'Branch', required: true, index: true },
+    branchName: { type: String, required: true },
+    requestedByUserId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    requestedByUserName: { type: String, required: true },
+    items: [
+      {
+        productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+        productName: { type: String, required: true },
+        sku: { type: String, required: true },
+        brand: { type: String },
+        requestedQuantity: { type: Number, required: true, min: 1 },
+        dispatchedQuantity: { type: Number, default: 0 },
+        receivedQuantity: { type: Number, default: 0 },
+      },
+    ],
+    status: {
+      type: String,
+      enum: ['PENDING', 'DISPATCHED', 'RECEIVED', 'REJECTED'],
+      default: 'PENDING',
+      index: true,
+    },
+    notes: { type: String },
+    dispatchNotes: { type: String },
+    receiveNotes: { type: String },
+    dispatchedAt: { type: Date },
+    dispatchedByUserId: { type: Schema.Types.ObjectId, ref: 'User' },
+    dispatchedByUserName: { type: String },
+    receivedAt: { type: Date },
+    receivedByUserId: { type: Schema.Types.ObjectId, ref: 'User' },
+    receivedByUserName: { type: String },
+  },
+  { timestamps: true }
+);
+
+export const InventoryOrder = mongoose.model<IInventoryOrder>('InventoryOrder', InventoryOrderSchema);
+

@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import asyncHandler from 'express-async-handler';
+import mongoose from 'mongoose';
 import { Invoice } from '../models/Invoice';
 import { Appointment } from '../models/Appointment';
 import { Customer } from '../models/Customer';
@@ -14,7 +15,10 @@ import { AuthRequest } from '../middleware/auth';
 export const getDashboardMetrics = asyncHandler(async (req: AuthRequest, res: Response) => {
   const targetBranch = req.query.branchId || req.activeBranchId;
   const branchFilter: any = { organizationId: req.organizationId };
-  if (targetBranch) branchFilter.branchId = targetBranch;
+
+  if (targetBranch && targetBranch !== 'undefined' && targetBranch !== 'null' && mongoose.Types.ObjectId.isValid(String(targetBranch))) {
+    branchFilter.branchId = targetBranch;
+  }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -52,9 +56,9 @@ export const getDashboardMetrics = asyncHandler(async (req: AuthRequest, res: Re
     }),
   ]);
 
-  const todayRevenue = todayInvoices.reduce((acc, inv) => acc + inv.totalAmount, 0);
-  const totalRevenue = totalInvoices.reduce((acc, inv) => acc + inv.totalAmount, 0);
-  const todayExpenseTotal = todayExpenses.reduce((acc, exp) => acc + exp.amount, 0);
+  const todayRevenue = todayInvoices.reduce((acc, inv) => acc + (inv.totalAmount || 0), 0);
+  const totalRevenue = totalInvoices.reduce((acc, inv) => acc + (inv.totalAmount || 0), 0);
+  const todayExpenseTotal = todayExpenses.reduce((acc, exp) => acc + (exp.amount || 0), 0);
 
   // Status breakdown of today's appointments
   const appointmentBreakdown = {
@@ -91,7 +95,7 @@ export const getDashboardMetrics = asyncHandler(async (req: AuthRequest, res: Re
       day: 'numeric',
     });
     if (dailyRevenueMap[dateKey] !== undefined) {
-      dailyRevenueMap[dateKey] += inv.totalAmount;
+      dailyRevenueMap[dateKey] += inv.totalAmount || 0;
     }
   });
 

@@ -12,6 +12,8 @@ import { Appointment } from '../models/Appointment';
 import { Invoice } from '../models/Invoice';
 import { AuthRequest } from '../middleware/auth';
 
+const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // @desc    Search and list customers
 // @route   GET /api/v1/customers
 export const getCustomers = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -19,7 +21,8 @@ export const getCustomers = asyncHandler(async (req: AuthRequest, res: Response)
   const query: any = { organizationId: req.organizationId, deletedAt: null };
 
   if (search) {
-    const searchRegex = new RegExp(String(search), 'i');
+    const escaped = escapeRegex(String(search).trim());
+    const searchRegex = new RegExp(escaped, 'i');
     query.$or = [{ fullName: searchRegex }, { phone: searchRegex }, { email: searchRegex }];
   }
 
@@ -124,7 +127,13 @@ export const adjustWallet = asyncHandler(async (req: AuthRequest, res: Response)
     balanceAfter: customer.walletBalance,
   });
 
-  res.json({ success: true, walletBalance: customer.walletBalance, transaction });
+  res.json({
+    success: true,
+    data: {
+      walletBalance: customer.walletBalance,
+      transaction,
+    },
+  });
 });
 
 // @desc    Add technical note
