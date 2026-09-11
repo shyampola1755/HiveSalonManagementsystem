@@ -939,7 +939,13 @@ const handleMockFallback = async (config: any): Promise<any> => {
 apiClient.interceptors.response.use(
   (response) => {
     // If Vercel rewrites unmatched /api/v1/* routes to index.html (string containing HTML), route it to mock handler!
-    if (typeof response.data === 'string' && (response.data.trim().startsWith('<!doctype html') || response.data.trim().startsWith('<html') || response.data.includes('<div id="root">'))) {
+    if (
+      typeof response.data === 'string' &&
+      (response.data.toLowerCase().includes('<!doctype html') ||
+        response.data.toLowerCase().includes('<html') ||
+        response.data.includes('<div id="root">') ||
+        response.data.includes('<script type="module"'))
+    ) {
       return handleMockFallback(response.config);
     }
     return response;
