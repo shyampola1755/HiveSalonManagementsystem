@@ -85,67 +85,146 @@ export const DEMO_PROFILES: Record<string, any> = {
   },
 };
 
-// In-Memory / LocalStorage Mock DB for Vercel demo environments
-const getMockData = () => {
-  const branches = [
-    { _id: 'hyd-01', id: 'hyd-01', name: 'Hyderabad Flagship (Banjara Hills)', code: 'HYD-01', isMainBranch: true },
-    { _id: 'mum-01', id: 'mum-01', name: 'Mumbai Salon & Spa (Bandra West)', code: 'MUM-01' },
-    { _id: 'blr-01', id: 'blr-01', name: 'Bangalore Lounge (Indiranagar)', code: 'BLR-01' },
-  ];
+// Initial Seed Data for Mock DB
+const INITIAL_CUSTOMERS = [
+  {
+    _id: 'c-1',
+    id: 'c-1',
+    fullName: 'Aarav Singhania',
+    phone: '+91 98765 43210',
+    email: 'aarav.s@example.com',
+    gender: 'MALE',
+    customerSource: 'INSTAGRAM',
+    totalVisits: 8,
+    totalSpent: 42500,
+    walletBalance: 2500,
+    loyaltyPoints: 425,
+    membershipTier: 'GOLD',
+    tags: ['VIP Client', 'Balayage Regular'],
+    hairProfile: { texture: 'Fine Wavy', density: 'High', porosity: 'Medium', scalpCondition: 'Normal' },
+    skinProfile: { skinType: 'Combination', allergies: ['None'] },
+    colorFormulas: [
+      { _id: 'f-1', formulaName: 'French Balayage Tone 9.1', formulaMix: 'Dia Light 9.01 + 9.11 (30g + 15g)', brand: "L'Oréal Professionnel", developerVolume: '6 Vol', processingTimeMinutes: 20 },
+    ],
+    patchTests: [
+      { _id: 'pt-1', testType: 'PPD Hair Color Allergen Test', chemicalOrBrandName: 'Majirel Cool Inforced', result: 'PASSED', date: '2026-08-15' },
+    ],
+  },
+  {
+    _id: 'c-2',
+    id: 'c-2',
+    fullName: 'Deepika Padukone',
+    phone: '+91 98222 11334',
+    email: 'deepika.p@example.com',
+    gender: 'FEMALE',
+    customerSource: 'REFERRAL',
+    totalVisits: 14,
+    totalSpent: 98000,
+    walletBalance: 12000,
+    loyaltyPoints: 980,
+    membershipTier: 'PLATINUM',
+    tags: ['Celebrity VIP', 'Kerastase Rituals'],
+    hairProfile: { texture: 'Thick Straight', density: 'High', porosity: 'Low', scalpCondition: 'Normal' },
+    skinProfile: { skinType: 'Normal Glow', allergies: ['None'] },
+    colorFormulas: [
+      { _id: 'f-2', formulaName: 'Rich Espresso Gloss', formulaMix: 'Dia Richesse 4.15 + Clear', brand: "L'Oréal Professionnel", developerVolume: '9 Vol', processingTimeMinutes: 25 },
+    ],
+    patchTests: [
+      { _id: 'pt-2', testType: 'Organic Keratin Patch Test', chemicalOrBrandName: 'Brazilian Blowout', result: 'PASSED', date: '2026-07-10' },
+    ],
+  },
+  {
+    _id: 'c-3',
+    id: 'c-3',
+    fullName: 'Rohan Mehra',
+    phone: '+91 91234 56789',
+    email: 'rohan.m@example.com',
+    gender: 'MALE',
+    customerSource: 'WALK_IN',
+    totalVisits: 3,
+    totalSpent: 7500,
+    walletBalance: 500,
+    loyaltyPoints: 75,
+    membershipTier: 'SILVER',
+    tags: ['Men Grooming'],
+    hairProfile: { texture: 'Medium Straight', density: 'Medium', porosity: 'Normal', scalpCondition: 'Dry' },
+    skinProfile: { skinType: 'Oily', allergies: ['None'] },
+    colorFormulas: [],
+    patchTests: [],
+  },
+];
 
-  const serviceCategories = [
-    { _id: 'sc-1', name: 'Hair Services', code: 'HAIR' },
-    { _id: 'sc-2', name: 'Color & Highlights', code: 'COLOR' },
-    { _id: 'sc-3', name: 'Skin & Facial Therapy', code: 'SKIN' },
-    { _id: 'sc-4', name: 'Nails & Hands', code: 'NAILS' },
-  ];
+const INITIAL_BRANCHES = [
+  { _id: 'hyd-01', id: 'hyd-01', name: 'Hyderabad Flagship (Banjara Hills)', code: 'HYD-01', isMainBranch: true, address: 'Road No. 12, Banjara Hills', phone: '+91 40 6789 0001' },
+  { _id: 'mum-01', id: 'mum-01', name: 'Mumbai Salon & Spa (Bandra West)', code: 'MUM-01', isMainBranch: false, address: 'Pali Hill, Bandra West', phone: '+91 22 4567 8901' },
+  { _id: 'blr-01', id: 'blr-01', name: 'Bangalore Lounge (Indiranagar)', code: 'BLR-01', isMainBranch: false, address: '100ft Road, Indiranagar', phone: '+91 80 2345 6789' },
+];
 
-  const services = [
-    { _id: 's-1', categoryId: { _id: 'sc-1', name: 'Hair Services' }, name: 'Precision Director Haircut', durationMinutes: 45, basePrice: 1500, effectivePrice: 1500 },
-    { _id: 's-2', categoryId: { _id: 'sc-2', name: 'Color & Highlights' }, name: 'French Balayage & Glossing', durationMinutes: 120, basePrice: 6500, effectivePrice: 6500 },
-    { _id: 's-3', categoryId: { _id: 'sc-1', name: 'Hair Services' }, name: 'Kérastase Chronologiste Luxury Ritual', durationMinutes: 60, basePrice: 3500, effectivePrice: 3500 },
-    { _id: 's-4', categoryId: { _id: 'sc-3', name: 'Skin & Facial Therapy' }, name: 'HydraFacial MD Platinum Rejuvenation', durationMinutes: 60, basePrice: 5500, effectivePrice: 5500 },
-    { _id: 's-5', categoryId: { _id: 'sc-4', name: 'Nails & Hands' }, name: 'Russian Gel Manicure & Nail Art', durationMinutes: 50, basePrice: 2000, effectivePrice: 2000 },
-  ];
+const INITIAL_CATEGORIES = [
+  { _id: 'sc-1', name: 'Hair Services', code: 'HAIR' },
+  { _id: 'sc-2', name: 'Color & Highlights', code: 'COLOR' },
+  { _id: 'sc-3', name: 'Skin & Facial Therapy', code: 'SKIN' },
+  { _id: 'sc-4', name: 'Nails & Hands', code: 'NAILS' },
+];
 
-  const productCategories = [
-    { _id: 'pc-1', name: 'Haircare & Masks' },
-    { _id: 'pc-2', name: 'Color & Developers' },
-    { _id: 'pc-3', name: 'Skincare Serums' },
-  ];
+const INITIAL_SERVICES = [
+  { _id: 's-1', categoryId: { _id: 'sc-1', name: 'Hair Services' }, name: 'Precision Director Haircut', durationMinutes: 45, basePrice: 1500, effectivePrice: 1500, taxRate: 18 },
+  { _id: 's-2', categoryId: { _id: 'sc-2', name: 'Color & Highlights' }, name: 'French Balayage & Glossing', durationMinutes: 120, basePrice: 6500, effectivePrice: 6500, taxRate: 18 },
+  { _id: 's-3', categoryId: { _id: 'sc-1', name: 'Hair Services' }, name: 'Kérastase Chronologiste Luxury Ritual', durationMinutes: 60, basePrice: 3500, effectivePrice: 3500, taxRate: 18 },
+  { _id: 's-4', categoryId: { _id: 'sc-3', name: 'Skin & Facial Therapy' }, name: 'HydraFacial MD Platinum Rejuvenation', durationMinutes: 60, basePrice: 5500, effectivePrice: 5500, taxRate: 18 },
+  { _id: 's-5', categoryId: { _id: 'sc-4', name: 'Nails & Hands' }, name: 'Russian Gel Manicure & Nail Art', durationMinutes: 50, basePrice: 2000, effectivePrice: 2000, taxRate: 18 },
+];
 
-  const products = [
-    { _id: 'p-1', name: 'Absolut Repair Molecular Leave-in Mask (100ml)', sku: 'LRL-MOL-100', brand: "L'Oréal Professionnel", categoryId: { name: 'Haircare' }, costPrice: 900, retailPrice: 1400, currentQuantity: 24, isRetailItem: true },
-    { _id: 'p-2', name: 'Kérastase Elixir Ultime L\'Huile Originale (100ml)', sku: 'KER-ELX-100', brand: 'Kérastase Paris', categoryId: { name: 'Haircare' }, costPrice: 2600, retailPrice: 3800, currentQuantity: 18, isRetailItem: true },
-    { _id: 'p-3', name: 'Dia Light Semi-Permanent Gel-Crème 7.11', sku: 'LRL-DIA-711', brand: "L'Oréal Professionnel", categoryId: { name: 'Color' }, costPrice: 420, retailPrice: 650, currentQuantity: 35, isRetailItem: true },
-    { _id: 'p-4', name: 'Olaplex No. 7 Bonding Oil (30ml)', sku: 'OLP-BND-030', brand: 'Olaplex', categoryId: { name: 'Haircare' }, costPrice: 1800, retailPrice: 2800, currentQuantity: 14, isRetailItem: true },
-    { _id: 'p-5', name: 'SkinCeuticals C E Ferulic Antioxidant Serum (30ml)', sku: 'SKC-CEF-030', brand: 'SkinCeuticals', categoryId: { name: 'Skincare' }, costPrice: 7500, retailPrice: 11000, currentQuantity: 8, isRetailItem: true },
-  ];
+const INITIAL_PRODUCT_CATEGORIES = [
+  { _id: 'pc-1', name: 'Haircare & Masks' },
+  { _id: 'pc-2', name: 'Color & Developers' },
+  { _id: 'pc-3', name: 'Skincare Serums' },
+];
 
-  const staff = [
-    { _id: 'st-1', displayName: 'Vikram Mehta', employeeCode: 'EMP-HYD-001', jobTitle: 'Senior Creative Hair Stylist', commissionRate: 20, monthlyRevenueTarget: 150000 },
-    { _id: 'st-2', displayName: 'Sara Khan', employeeCode: 'EMP-HYD-002', jobTitle: 'Master Aesthetician & Skin Therapist', commissionRate: 18, monthlyRevenueTarget: 120000 },
-    { _id: 'st-3', displayName: 'Rahul Verma', employeeCode: 'EMP-HYD-003', jobTitle: 'Creative Color Director', commissionRate: 22, monthlyRevenueTarget: 180000 },
-  ];
+const INITIAL_PRODUCTS = [
+  { _id: 'p-1', name: 'Absolut Repair Molecular Leave-in Mask (100ml)', sku: 'LRL-MOL-100', brand: "L'Oréal Professionnel", categoryId: { name: 'Haircare' }, costPrice: 900, retailPrice: 1400, currentQuantity: 24, isRetailItem: true },
+  { _id: 'p-2', name: 'Kérastase Elixir Ultime L\'Huile Originale (100ml)', sku: 'KER-ELX-100', brand: 'Kérastase Paris', categoryId: { name: 'Haircare' }, costPrice: 2600, retailPrice: 3800, currentQuantity: 18, isRetailItem: true },
+  { _id: 'p-3', name: 'Dia Light Semi-Permanent Gel-Crème 7.11', sku: 'LRL-DIA-711', brand: "L'Oréal Professionnel", categoryId: { name: 'Color' }, costPrice: 420, retailPrice: 650, currentQuantity: 35, isRetailItem: true },
+  { _id: 'p-4', name: 'Olaplex No. 7 Bonding Oil (30ml)', sku: 'OLP-BND-030', brand: 'Olaplex', categoryId: { name: 'Haircare' }, costPrice: 1800, retailPrice: 2800, currentQuantity: 14, isRetailItem: true },
+  { _id: 'p-5', name: 'SkinCeuticals C E Ferulic Antioxidant Serum (30ml)', sku: 'SKC-CEF-030', brand: 'SkinCeuticals', categoryId: { name: 'Skincare' }, costPrice: 7500, retailPrice: 11000, currentQuantity: 8, isRetailItem: true },
+];
 
-  const customers = [
-    { _id: 'c-1', fullName: 'Aarav Singhania', phone: '+91 98765 43210', email: 'aarav.s@example.com', totalVisits: 8, totalSpent: 42500, loyaltyPoints: 425, membershipTier: 'GOLD', hairProfile: { texture: 'Fine Wavy', density: 'High', scalpCondition: 'Normal' }, skinProfile: { type: 'Combination' } },
-    { _id: 'c-2', fullName: 'Deepika Padukone', phone: '+91 98222 11334', email: 'deepika.p@example.com', totalVisits: 14, totalSpent: 98000, loyaltyPoints: 980, membershipTier: 'PLATINUM', hairProfile: { texture: 'Thick Straight', density: 'High', scalpCondition: 'Normal' } },
-    { _id: 'c-3', fullName: 'Rohan Mehra', phone: '+91 91234 56789', email: 'rohan.m@example.com', totalVisits: 3, totalSpent: 7500, loyaltyPoints: 75, membershipTier: 'SILVER' },
-  ];
+const INITIAL_STAFF = [
+  { _id: 'st-1', displayName: 'Vikram Mehta', employeeCode: 'EMP-HYD-001', jobTitle: 'Senior Creative Hair Stylist', commissionRate: 20, monthlyRevenueTarget: 150000 },
+  { _id: 'st-2', displayName: 'Sara Khan', employeeCode: 'EMP-HYD-002', jobTitle: 'Master Aesthetician & Skin Therapist', commissionRate: 18, monthlyRevenueTarget: 120000 },
+  { _id: 'st-3', displayName: 'Rahul Verma', employeeCode: 'EMP-HYD-003', jobTitle: 'Creative Color Director', commissionRate: 22, monthlyRevenueTarget: 180000 },
+];
 
-  const appointments = [
-    { _id: 'app-1', customerName: 'Aarav Singhania', customerPhone: '+91 98765 43210', serviceName: 'French Balayage & Glossing', staffName: 'Vikram Mehta', startTime: '10:00', endTime: '12:00', status: 'IN_SERVICE', totalPrice: 6500 },
-    { _id: 'app-2', customerName: 'Deepika Padukone', customerPhone: '+91 98222 11334', serviceName: 'HydraFacial MD Platinum', staffName: 'Sara Khan', startTime: '12:30', endTime: '13:30', status: 'CHECKED_IN', totalPrice: 5500 },
-    { _id: 'app-3', customerName: 'Rohan Mehra', customerPhone: '+91 91234 56789', serviceName: 'Precision Director Haircut', staffName: 'Rahul Verma', startTime: '14:00', endTime: '14:45', status: 'SCHEDULED', totalPrice: 1500 },
-  ];
+const INITIAL_APPOINTMENTS = [
+  { _id: 'app-1', customerName: 'Aarav Singhania', customerPhone: '+91 98765 43210', serviceName: 'French Balayage & Glossing', staffName: 'Vikram Mehta', startTime: '10:00', endTime: '12:00', status: 'IN_SERVICE', totalPrice: 6500 },
+  { _id: 'app-2', customerName: 'Deepika Padukone', customerPhone: '+91 98222 11334', serviceName: 'HydraFacial MD Platinum', staffName: 'Sara Khan', startTime: '12:30', endTime: '13:30', status: 'CHECKED_IN', totalPrice: 5500 },
+  { _id: 'app-3', customerName: 'Rohan Mehra', customerPhone: '+91 91234 56789', serviceName: 'Precision Director Haircut', staffName: 'Rahul Verma', startTime: '14:00', endTime: '14:45', status: 'SCHEDULED', totalPrice: 1500 },
+];
 
-  const orders = [
-    { _id: 'ord-1', orderNumber: 'ORD-HYD-01-768139', branchName: 'Hyderabad Flagship (Banjara Hills)', requestedByUserName: 'Priya Sharma (Branch Manager)', status: 'RECEIVED', createdAt: new Date().toISOString(), items: [{ productName: 'Absolut Repair Molecular Leave-in Mask (100ml)', requestedQuantity: 15, receivedQuantity: 15 }] },
-    { _id: 'ord-2', orderNumber: 'ORD-MUM-01-923145', branchName: 'Mumbai Salon & Spa (Bandra West)', requestedByUserName: 'Rohan Joshi', status: 'DISPATCHED', createdAt: new Date().toISOString(), items: [{ productName: 'Kérastase Elixir Ultime L\'Huile Originale (100ml)', requestedQuantity: 10, dispatchedQuantity: 10 }] },
-  ];
+const INITIAL_ORDERS = [
+  { _id: 'ord-1', orderNumber: 'ORD-HYD-01-768139', branchName: 'Hyderabad Flagship (Banjara Hills)', requestedByUserName: 'Priya Sharma (Branch Manager)', status: 'RECEIVED', createdAt: new Date().toISOString(), items: [{ productName: 'Absolut Repair Molecular Leave-in Mask (100ml)', requestedQuantity: 15, receivedQuantity: 15 }] },
+  { _id: 'ord-2', orderNumber: 'ORD-MUM-01-923145', branchName: 'Mumbai Salon & Spa (Bandra West)', requestedByUserName: 'Rohan Joshi', status: 'DISPATCHED', createdAt: new Date().toISOString(), items: [{ productName: 'Kérastase Elixir Ultime L\'Huile Originale (100ml)', requestedQuantity: 10, dispatchedQuantity: 10 }] },
+];
 
-  return { branches, serviceCategories, services, productCategories, products, staff, customers, appointments, orders };
+// Helper to access and persist stateful mock collections
+const getStorageList = (key: string, defaultData: any[]): any[] => {
+  try {
+    const saved = localStorage.getItem(`hive_db_${key}`);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {}
+  try {
+    localStorage.setItem(`hive_db_${key}`, JSON.stringify(defaultData));
+  } catch (e) {}
+  return defaultData;
+};
+
+const saveStorageList = (key: string, data: any[]): void => {
+  try {
+    localStorage.setItem(`hive_db_${key}`, JSON.stringify(data));
+  } catch (e) {}
 };
 
 // Request interceptor to attach JWT token and active branch header
@@ -163,7 +242,7 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor with graceful fallback for Vercel demo environments
+// Response interceptor with graceful fallback & full reactive mock DB for Vercel demo environments
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -172,11 +251,10 @@ apiClient.interceptors.response.use(
 
     const url = config.url || '';
     const method = (config.method || 'get').toLowerCase();
-    const mock = getMockData();
 
-    console.warn(`[API Fallback] Request to ${url} intercepted for offline/demo environment.`);
+    console.warn(`[API Fallback] Request to ${url} handled by reactive local mock DB.`);
 
-    // Auth endpoints
+    // 1. Auth Endpoints
     if (url.includes('/auth/login')) {
       let email = 'admin@hivesalon.com';
       try {
@@ -186,6 +264,7 @@ apiClient.interceptors.response.use(
         }
       } catch (e) {}
 
+      const branches = getStorageList('branches', INITIAL_BRANCHES);
       const user = DEMO_PROFILES[email] || {
         id: `user_${Date.now()}`,
         _id: `user_${Date.now()}`,
@@ -193,7 +272,7 @@ apiClient.interceptors.response.use(
         fullName: email.split('@')[0].toUpperCase() + ' (Staff)',
         role: 'SUPER_ADMIN',
         primaryBranchId: 'hyd-01',
-        branches: mock.branches,
+        branches,
         organization: { id: 'org_01', name: 'Hive Luxury Salon & Spa', code: 'HIVE', currency: 'INR' },
       };
 
@@ -231,39 +310,127 @@ apiClient.interceptors.response.use(
       };
     }
 
-    // Mock Route Handling
+    // 2. Customer CRM Endpoints (Persistent CRUD + Wallet Topup + Search)
+    if (url.includes('/customers')) {
+      const customerList = getStorageList('customers', INITIAL_CUSTOMERS);
+
+      // POST /customers/:id/wallet
+      if (url.includes('/wallet')) {
+        const match = url.match(/\/customers\/([^/]+)\/wallet/);
+        const targetId = match ? match[1] : '';
+        const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
+        const amount = Number(body.amount) || 0;
+
+        const updated = customerList.map((c: any) => {
+          if (c._id === targetId || c.id === targetId) {
+            return { ...c, walletBalance: (c.walletBalance || 0) + amount };
+          }
+          return c;
+        });
+        saveStorageList('customers', updated);
+        return { status: 200, data: { success: true, message: 'Wallet credited successfully' } };
+      }
+
+      // POST /customers (Register new customer)
+      if (method === 'post') {
+        const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
+        const newCustId = `c_${Date.now()}`;
+        const newCust = {
+          _id: newCustId,
+          id: newCustId,
+          fullName: body.fullName || 'New Client',
+          phone: body.phone || '',
+          email: body.email || '',
+          gender: body.gender || 'FEMALE',
+          customerSource: body.customerSource || 'WALK_IN',
+          address: body.address || '',
+          walletBalance: 0,
+          loyaltyPoints: 50,
+          totalSpent: 0,
+          totalVisits: 1,
+          membershipTier: 'SILVER',
+          tags: ['New Client', body.customerSource || 'Walk-In'],
+          hairProfile: { texture: 'Normal', density: 'Medium', porosity: 'Normal', scalpCondition: 'Healthy' },
+          skinProfile: { skinType: 'Combination', allergies: [] },
+          colorFormulas: [],
+          patchTests: [],
+          createdAt: new Date().toISOString(),
+        };
+
+        const updated = [newCust, ...customerList];
+        saveStorageList('customers', updated);
+        return { status: 200, data: { success: true, data: newCust, message: 'Customer registered successfully' } };
+      }
+
+      // GET /customers/:id (Single Customer 360 View)
+      const singleMatch = url.match(/\/customers\/([a-zA-Z0-9_-]+)$/);
+      if (singleMatch && !url.includes('?')) {
+        const id = singleMatch[1];
+        const found = customerList.find((c: any) => c._id === id || c.id === id) || customerList[0];
+        return { status: 200, data: { success: true, data: found } };
+      }
+
+      // GET /customers?search=...
+      const searchParam = new URLSearchParams(url.split('?')[1] || '').get('search') || '';
+      let filtered = customerList;
+      if (searchParam.trim()) {
+        const s = searchParam.toLowerCase().trim();
+        filtered = customerList.filter((c: any) =>
+          (c.fullName && c.fullName.toLowerCase().includes(s)) ||
+          (c.phone && c.phone.toLowerCase().includes(s)) ||
+          (c.email && c.email.toLowerCase().includes(s))
+        );
+      }
+      return { status: 200, data: { success: true, data: filtered } };
+    }
+
+    // 3. Branches Endpoints
     if (url.includes('/branches/hierarchy') || url.includes('/branches')) {
+      const branches = getStorageList('branches', INITIAL_BRANCHES);
       if (method === 'post') {
         const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
         const newBranch = { _id: `br_${Date.now()}`, id: `br_${Date.now()}`, ...body };
+        const updated = [...branches, newBranch];
+        saveStorageList('branches', updated);
         return { status: 200, data: { success: true, data: newBranch, message: 'Branch created' } };
       }
-      return { status: 200, data: { success: true, data: mock.branches } };
+      return { status: 200, data: { success: true, data: branches } };
     }
 
+    // 4. Services Endpoints
     if (url.includes('/services/categories')) {
-      return { status: 200, data: { success: true, data: mock.serviceCategories } };
+      return { status: 200, data: { success: true, data: INITIAL_CATEGORIES } };
     }
     if (url.includes('/services')) {
+      const services = getStorageList('services', INITIAL_SERVICES);
       if (method === 'post') {
         const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
-        const newService = { _id: `s_${Date.now()}`, ...body };
+        const newService = { _id: `s_${Date.now()}`, taxRate: 18, ...body };
+        const updated = [...services, newService];
+        saveStorageList('services', updated);
         return { status: 200, data: { success: true, data: newService, message: 'Service created' } };
       }
-      return { status: 200, data: { success: true, data: mock.services } };
+      return { status: 200, data: { success: true, data: services } };
     }
 
+    // 5. Inventory & Products Endpoints
     if (url.includes('/inventory/categories')) {
-      return { status: 200, data: { success: true, data: mock.productCategories } };
+      return { status: 200, data: { success: true, data: INITIAL_PRODUCT_CATEGORIES } };
     }
     if (url.includes('/inventory/products')) {
-      return { status: 200, data: { success: true, data: mock.products } };
+      const products = getStorageList('products', INITIAL_PRODUCTS);
+      return { status: 200, data: { success: true, data: products } };
     }
     if (url.includes('/inventory/adjust')) {
       return { status: 200, data: { success: true, message: 'Stock adjusted successfully' } };
     }
+
+    // 6. Inventory Orders (Multi-branch Request -> Super Admin Dispatch -> Receive flow)
     if (url.includes('/inventory/orders')) {
+      const orders = getStorageList('inventory_orders', INITIAL_ORDERS);
+
       if (method === 'post') {
+        const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
         const newOrder = {
           _id: `ord_${Date.now()}`,
           orderNumber: `ORD-HYD-01-${Date.now().toString().slice(-6)}`,
@@ -271,68 +438,87 @@ apiClient.interceptors.response.use(
           requestedByUserName: 'Priya Sharma (Branch Manager)',
           status: 'PENDING',
           createdAt: new Date().toISOString(),
-          items: config.data ? (typeof config.data === 'string' ? JSON.parse(config.data).items : config.data.items) : [],
+          items: body.items || [],
         };
+        const updated = [newOrder, ...orders];
+        saveStorageList('inventory_orders', updated);
         return { status: 200, data: { success: true, data: newOrder, message: 'Order request created' } };
       }
+
       if (method === 'put') {
+        const updated = orders.map((o: any) => {
+          if (url.includes(o._id)) {
+            if (url.includes('/dispatch')) return { ...o, status: 'DISPATCHED' };
+            if (url.includes('/receive')) return { ...o, status: 'RECEIVED' };
+            if (url.includes('/reject')) return { ...o, status: 'REJECTED' };
+          }
+          return o;
+        });
+        saveStorageList('inventory_orders', updated);
         return { status: 200, data: { success: true, message: 'Order status updated successfully' } };
       }
-      return { status: 200, data: { success: true, data: mock.orders } };
+
+      return { status: 200, data: { success: true, data: orders } };
     }
 
-    if (url.includes('/customers')) {
-      if (method === 'post') {
-        const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
-        const newCust = { _id: `c_${Date.now()}`, ...body, totalVisits: 1, totalSpent: 0, loyaltyPoints: 0 };
-        return { status: 200, data: { success: true, data: newCust, message: 'Customer created' } };
-      }
-      return { status: 200, data: { success: true, data: mock.customers } };
-    }
+    // 7. Appointments & Floor Queue
+    if (url.includes('/appointments/queue') || url.includes('/appointments')) {
+      const appts = getStorageList('appointments', INITIAL_APPOINTMENTS);
 
-    if (url.includes('/appointments/queue')) {
-      return { status: 200, data: { success: true, data: mock.appointments } };
-    }
-    if (url.includes('/appointments')) {
       if (method === 'post') {
         const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
         const newAppt = { _id: `app_${Date.now()}`, ...body, status: 'SCHEDULED' };
+        const updated = [newAppt, ...appts];
+        saveStorageList('appointments', updated);
         return { status: 200, data: { success: true, data: newAppt, message: 'Appointment booked' } };
       }
+
       if (method === 'put') {
+        const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
+        const updated = appts.map((a: any) => (url.includes(a._id) ? { ...a, ...body } : a));
+        saveStorageList('appointments', updated);
         return { status: 200, data: { success: true, message: 'Appointment updated' } };
       }
-      return { status: 200, data: { success: true, data: mock.appointments } };
+
+      return { status: 200, data: { success: true, data: appts } };
     }
 
+    // 8. Staff & Team
     if (url.includes('/staff/attendance')) {
-      const attendance = mock.staff.map(s => ({ staffId: s._id, displayName: s.displayName, status: 'PRESENT', clockIn: '09:00 AM' }));
+      const staffList = getStorageList('staff', INITIAL_STAFF);
+      const attendance = staffList.map((s: any) => ({ staffId: s._id, displayName: s.displayName, status: 'PRESENT', clockIn: '09:00 AM' }));
       return { status: 200, data: { success: true, data: attendance } };
     }
     if (url.includes('/staff')) {
+      const staffList = getStorageList('staff', INITIAL_STAFF);
       if (method === 'post') {
         const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
         const newStaff = { _id: `st_${Date.now()}`, ...body };
+        const updated = [...staffList, newStaff];
+        saveStorageList('staff', updated);
         return { status: 200, data: { success: true, data: newStaff, message: 'Staff member added' } };
       }
-      return { status: 200, data: { success: true, data: mock.staff } };
+      return { status: 200, data: { success: true, data: staffList } };
     }
 
+    // 9. Finance & Expenses
     if (url.includes('/finance/expenses')) {
+      const expenses = getStorageList('expenses', [{ _id: 'exp-1', category: 'Products & Supplies', amount: 4200, date: new Date().toISOString(), status: 'APPROVED' }]);
       if (method === 'post') {
         const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
-        return { status: 200, data: { success: true, data: { _id: `exp_${Date.now()}`, ...body }, message: 'Expense logged' } };
+        const newExp = { _id: `exp_${Date.now()}`, date: new Date().toISOString(), status: 'APPROVED', ...body };
+        const updated = [newExp, ...expenses];
+        saveStorageList('expenses', updated);
+        return { status: 200, data: { success: true, data: newExp, message: 'Expense logged' } };
       }
-      return { status: 200, data: { success: true, data: [{ _id: 'exp-1', category: 'Products & Supplies', amount: 4200, date: new Date().toISOString(), status: 'APPROVED' }] } };
+      return { status: 200, data: { success: true, data: expenses } };
     }
+
     if (url.includes('/finance/campaigns')) {
-      if (method === 'post') {
-        const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
-        return { status: 200, data: { success: true, data: { _id: `cmp_${Date.now()}`, ...body }, message: 'Campaign created' } };
-      }
       return { status: 200, data: { success: true, data: [{ _id: 'cmp-1', name: 'Summer Glow Fest', channel: 'SMS & WhatsApp', reach: 1200, conversions: 84, revenue: 142000, status: 'ACTIVE' }] } };
     }
 
+    // 10. Memberships & Loyalty
     if (url.includes('/memberships')) {
       return {
         status: 200,
@@ -346,7 +532,9 @@ apiClient.interceptors.response.use(
       };
     }
 
+    // 11. Reports & Dashboard
     if (url.includes('/reports/dashboard')) {
+      const custCount = getStorageList('customers', INITIAL_CUSTOMERS).length;
       return {
         status: 200,
         data: {
@@ -358,7 +546,7 @@ apiClient.interceptors.response.use(
               todayExpenseTotal: 4200,
               netToday: 24300,
               todayAppointmentsCount: 14,
-              totalCustomers: 248,
+              totalCustomers: custCount,
               activeBranches: 3,
               totalStaff: 12,
               inventoryCount: 48,
@@ -378,20 +566,28 @@ apiClient.interceptors.response.use(
       };
     }
 
+    // 12. POS Checkout & Invoices
     if (url.includes('/pos/checkout') || url.includes('/pos/invoices') || url.includes('/invoices')) {
+      const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
       const invNum = `INV-HYD-01-${Date.now().toString().slice(-6)}`;
+      const newInvoice = {
+        _id: `inv_${Date.now()}`,
+        invoiceNumber: invNum,
+        customerName: body.customerName || 'Aarav Singhania',
+        totalAmount: body.payments?.[0]?.amount || 3761,
+        paymentStatus: 'PAID',
+        payments: body.payments || [{ method: 'UPI', amount: 3761 }],
+        createdAt: new Date().toISOString(),
+      };
+
+      const invoices = getStorageList('invoices', []);
+      saveStorageList('invoices', [newInvoice, ...invoices]);
+
       return {
         status: 200,
         data: {
           success: true,
-          data: {
-            _id: `inv_${Date.now()}`,
-            invoiceNumber: invNum,
-            customerName: 'Aarav Singhania',
-            totalAmount: 3761,
-            paymentStatus: 'PAID',
-            createdAt: new Date().toISOString(),
-          },
+          data: newInvoice,
           message: 'Invoice created successfully',
         },
       };
