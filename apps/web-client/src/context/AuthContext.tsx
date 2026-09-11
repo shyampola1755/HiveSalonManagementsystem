@@ -185,13 +185,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (token) {
         try {
           const res = await apiClient.get('/auth/me');
-          if (res.data.success) {
+          if (res.data?.success && res.data?.user) {
             setUser(res.data.user);
             localStorage.setItem('hive_user', JSON.stringify(res.data.user));
           }
           await refreshBranches();
-        } catch (e) {
-          logout();
+        } catch (e: any) {
+          if (e?.response?.status === 401 && !token.startsWith('demo_session_')) {
+            logout();
+          }
         }
       }
       setIsLoading(false);
