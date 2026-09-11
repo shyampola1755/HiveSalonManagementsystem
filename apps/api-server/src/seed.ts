@@ -24,9 +24,8 @@ import {
   Expense,
 } from './models';
 
-export const seedDatabase = async () => {
+export const seedData = async () => {
   console.log('[Seed] Starting Hive Salon MongoDB Seeder...');
-  await connectDB();
 
   // Clean collections
   await Promise.all([
@@ -551,6 +550,11 @@ export const seedDatabase = async () => {
   📍 Branches:      Hyderabad, Mumbai, Bangalore
 ============================================================
   `);
+};
+
+export const seedDatabase = async () => {
+  await connectDB();
+  await seedData();
 };
 
 if (require.main === module) {
