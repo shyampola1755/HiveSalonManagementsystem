@@ -37,6 +37,19 @@ async function verifyLiveVercel() {
   console.log('Verifying Front Desk Hub on Vercel...');
   await page.goto(`${TARGET_URL}/front-desk/dashboard`, { waitUntil: 'networkidle0' });
   await new Promise(r => setTimeout(r, 1500));
+
+  const debugDash = await page.evaluate(async () => {
+    try {
+      const token = localStorage.getItem('hive_token');
+      const user = localStorage.getItem('hive_user');
+      const branch = localStorage.getItem('hive_active_branch');
+      return { token: !!token, user: user ? JSON.parse(user).email : null, branch };
+    } catch (e) {
+      return { error: e.message };
+    }
+  });
+  console.log('Dashboard Auth State:', debugDash);
+
   await page.screenshot({ path: path.join(ARTIFACT_DIR, 'vercel_live_01_dashboard.png') });
   console.log('📸 Captured vercel_live_01_dashboard.png');
 
@@ -48,7 +61,8 @@ async function verifyLiveVercel() {
   const debugPos = await page.evaluate(async () => {
     try {
       const cats = localStorage.getItem('hive_db_categories') || localStorage.getItem('hive_active_branch');
-      return { storage: cats };
+      const svcs = localStorage.getItem('hive_db_services');
+      return { storage: cats, svcsCount: svcs ? JSON.parse(svcs).length : null };
     } catch (e) {
       return { error: e.message };
     }

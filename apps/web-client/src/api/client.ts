@@ -952,6 +952,20 @@ const handleMockFallback = async (config: any): Promise<any> => {
     };
 };
 
+if (isStandaloneDemo) {
+  apiClient.defaults.adapter = async (cfg: any) => {
+    const mockRes = await handleMockFallback(cfg);
+    return {
+      data: mockRes.data,
+      status: mockRes.status || 200,
+      statusText: 'OK',
+      headers: {},
+      config: cfg,
+      request: {},
+    };
+  };
+}
+
 apiClient.interceptors.response.use(
   (response) => {
     // If Vercel rewrites unmatched /api/v1/* routes to index.html (string containing HTML), route it to mock handler!
