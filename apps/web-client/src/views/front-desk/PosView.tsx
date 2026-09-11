@@ -62,23 +62,31 @@ export const PosView: React.FC = () => {
   useEffect(() => {
     const fetchCatalog = async () => {
       try {
+        const getArray = (res: any) => {
+          if (!res) return [];
+          if (Array.isArray(res.data?.data)) return res.data.data;
+          if (Array.isArray(res.data)) return res.data;
+          if (Array.isArray(res.data?.data?.data)) return res.data.data.data;
+          return [];
+        };
+
         if (activeTab === 'SERVICES') {
           const [catRes, svcRes] = await Promise.all([
             apiClient.get('/services/categories'),
             apiClient.get('/services'),
           ]);
-          if (catRes.data.success) setCategories(catRes.data.data);
-          if (svcRes.data.success) setCatalogItems(svcRes.data.data);
+          setCategories(getArray(catRes));
+          setCatalogItems(getArray(svcRes));
         } else {
           const [catRes, prodRes] = await Promise.all([
             apiClient.get('/inventory/categories'),
             apiClient.get('/inventory/products?isRetail=true'),
           ]);
-          if (catRes.data.success) setCategories(catRes.data.data);
-          if (prodRes.data.success) setCatalogItems(prodRes.data.data);
+          setCategories(getArray(catRes));
+          setCatalogItems(getArray(prodRes));
         }
         const staffRes = await apiClient.get('/staff');
-        if (staffRes.data.success) setStaffList(staffRes.data.data);
+        setStaffList(getArray(staffRes));
       } catch (err) {
         console.error('Error fetching catalog:', err);
       }
@@ -95,9 +103,14 @@ export const PosView: React.FC = () => {
     }
     try {
       const res = await apiClient.get(`/customers?search=${encodeURIComponent(query)}`);
-      if (res.data.success) {
-        setCustomersList(res.data.data);
-      }
+      const getArray = (res: any) => {
+        if (!res) return [];
+        if (Array.isArray(res.data?.data)) return res.data.data;
+        if (Array.isArray(res.data)) return res.data;
+        if (Array.isArray(res.data?.data?.data)) return res.data.data.data;
+        return [];
+      };
+      setCustomersList(getArray(res));
     } catch (e) {
       console.error(e);
     }

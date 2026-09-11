@@ -19,9 +19,18 @@ export const MembershipsView: React.FC = () => {
         apiClient.get('/memberships/packages'),
         apiClient.get('/customers?limit=100'),
       ]);
-      if (tiersRes.data.success) setTiers(tiersRes.data.data);
-      if (pkgRes.data.success) setPackages(pkgRes.data.data);
-      if (custRes.data.success) setCustomers(custRes.data.data);
+
+      const getArray = (res: any) => {
+        if (!res) return [];
+        if (Array.isArray(res.data?.data)) return res.data.data;
+        if (Array.isArray(res.data)) return res.data;
+        if (Array.isArray(res.data?.data?.data)) return res.data.data.data;
+        return [];
+      };
+
+      setTiers(getArray(tiersRes));
+      setPackages(getArray(pkgRes));
+      setCustomers(getArray(custRes));
     } catch (e) {
       console.error(e);
     }

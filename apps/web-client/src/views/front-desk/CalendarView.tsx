@@ -42,10 +42,19 @@ export const CalendarView: React.FC = () => {
         apiClient.get('/services'),
         apiClient.get('/customers?limit=100'),
       ]);
-      if (appRes.data.success) setAppointments(appRes.data.data);
-      if (staffRes.data.success) setStaffList(staffRes.data.data);
-      if (svcRes.data.success) setServicesList(svcRes.data.data);
-      if (custRes.data.success) setCustomersList(custRes.data.data);
+
+      const getArray = (res: any) => {
+        if (!res) return [];
+        if (Array.isArray(res.data?.data)) return res.data.data;
+        if (Array.isArray(res.data)) return res.data;
+        if (Array.isArray(res.data?.data?.data)) return res.data.data.data;
+        return [];
+      };
+
+      setAppointments(getArray(appRes));
+      setStaffList(getArray(staffRes));
+      setServicesList(getArray(svcRes));
+      setCustomersList(getArray(custRes));
     } catch (err) {
       console.error(err);
     }

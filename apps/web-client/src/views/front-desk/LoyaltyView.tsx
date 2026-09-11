@@ -10,9 +10,15 @@ export const LoyaltyView: React.FC = () => {
     const fetchCustomers = async () => {
       try {
         const res = await apiClient.get(`/customers?search=${encodeURIComponent(search)}`);
-        if (res.data.success) {
-          setCustomers(res.data.data.filter((c: any) => c.loyaltyPoints > 0));
-        }
+        const getArray = (res: any) => {
+          if (!res) return [];
+          if (Array.isArray(res.data?.data)) return res.data.data;
+          if (Array.isArray(res.data)) return res.data;
+          if (Array.isArray(res.data?.data?.data)) return res.data.data.data;
+          return [];
+        };
+        const list = getArray(res);
+        setCustomers(list.filter((c: any) => (c.loyaltyPoints || 0) > 0));
       } catch (e) {
         console.error(e);
       }
