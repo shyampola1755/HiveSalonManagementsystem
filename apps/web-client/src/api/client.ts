@@ -465,22 +465,158 @@ apiClient.interceptors.response.use(
     if (url.includes('/appointments/queue') || url.includes('/appointments')) {
       const appts = getStorageList('appointments', INITIAL_APPOINTMENTS);
 
+      // GET /appointments/queue
+      if (url.includes('/appointments/queue')) {
+        const queue = appts.filter((a: any) =>
+          ['CHECKED_IN', 'IN_SERVICE', 'SCHEDULED', 'CONFIRMED'].includes(a.status)
+        );
+        return { status: 200, data: { success: true, count: queue.length, data: queue } };
+      }
+
+      // POST /appointments
       if (method === 'post') {
         const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
-        const newAppt = { _id: `app_${Date.now()}`, ...body, status: 'SCHEDULED' };
+        const { customerId, serviceId, staffId, appointmentDate, startTime, durationMinutes = 60, notes, source } = body;
+
+        const d = new Date();
+        const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const targetDate = appointmentDate || todayStr;
+
+        // 1. Past date & time validation
+        if (targetDate < todayStr) {
+          return { status: 400, data: { success: false, message: 'Cannot schedule appointments for past dates.' } };
+        }
+
+        const [startH, startM] = (startTime || '00:00').split(':').map(Number);
+        const startTotalMinutes = startH * 60 + (startM || 0);
+        const duration = Number(durationMinutes) || 60;
+        const endTotalMinutes = startTotalMinutes + duration;
+        const endH = Math.floor(endTotalMinutes / 60).toString().padStart(2, '0');
+        const endM = (endTotalMinutes % 60).toString().padStart(2, '0');
+        const endTime = `${endH}:${endM}`;
+
+        if (targetDate === todayStr) {
+          const currentMinutes = d.getHours() * 60 + d.getMinutes();
+          if (startTotalMinutes <= currentMinutes) {
+            return { status: 400, data: { success: false, message: 'Cannot schedule appointments in the past. Please select an upcoming time slot.' } };
+          }
+        }
+
+        // 2. Single Appointment per Customer (Concurrent Appointment Overlap Check)
+        const customerConflict = appts.find((a: any) => {
+          if (a.status === 'CANCELLED' || a.status === 'NO_SHOW') return false;
+          const aDate = a.appointmentDate ? (typeof a.appointmentDate === 'string' ? a.appointmentDate.split('T')[0] : '') : todayStr;
+          if (aDate && aDate !== targetDate) return false;
+
+          const aCustId = a.customerId?._id || a.customerId?.id || a.customerId;
+          if (aCustId !== customerId) return false;
+
+          const [aH, aM] = (a.startTime || '00:00').split(':').map(Number);
+          const aStart = aH * 60 + (aM || 0);
+          let aEnd = aStart + (Number(a.durationMinutes) || 60);
+          if (a.endTime) {
+            const [aeH, aeM] = a.endTime.split(':').map(Number);
+            aEnd = aeH * 60 + (aeM || 0);
+          }
+
+          return (startTotalMinutes < aEnd && endTotalMinutes > aStart);
+        });
+
+        if (customerConflict) {
+          return {
+            status: 400,
+            data: {
+              success: false,
+              message: `This customer already has an active appointment scheduled at ${customerConflict.startTime}. Concurrent bookings for the same client are not allowed.`,
+            },
+          };
+        }
+
+        // 3. Stylist Overlap Check
+        if (staffId) {
+          const staffConflict = appts.find((a: any) => {
+            if (a.status === 'CANCELLED' || a.status === 'NO_SHOW') return false;
+            const aDate = a.appointmentDate ? (typeof a.appointmentDate === 'string' ? a.appointmentDate.split('T')[0] : '') : todayStr;
+            if (aDate && aDate !== targetDate) return false;
+
+            const aStaffId = a.staffId?._id || a.staffId?.id || a.staffId;
+            if (aStaffId !== staffId) return false;
+
+            const [aH, aM] = (a.startTime || '00:00').split(':').map(Number);
+            const aStart = aH * 60 + (aM || 0);
+            let aEnd = aStart + (Number(a.durationMinutes) || 60);
+            if (a.endTime) {
+              const [aeH, aeM] = a.endTime.split(':').map(Number);
+              aEnd = aeH * 60 + (aeM || 0);
+            }
+
+            return (startTotalMinutes < aEnd && endTotalMinutes > aStart);
+          });
+
+          if (staffConflict) {
+            return {
+              status: 400,
+              data: {
+                success: false,
+                message: `Selected stylist is already booked at ${staffConflict.startTime}. Please select another time or stylist.`,
+              },
+            };
+          }
+        }
+
+        // Resolve relations
+        const customers = getStorageList('customers', INITIAL_CUSTOMERS);
+        const services = getStorageList('services', INITIAL_SERVICES);
+        const staff = getStorageList('staff', INITIAL_STAFF);
+
+        const foundCust = customers.find((c: any) => c._id === customerId || c.id === customerId);
+        const foundSvc = services.find((s: any) => s._id === serviceId || s.id === serviceId);
+        const foundStaff = staff.find((s: any) => s._id === staffId || s.id === staffId);
+
+        const newAppt = {
+          _id: `app_${Date.now()}`,
+          id: `app_${Date.now()}`,
+          customerId: foundCust ? { _id: foundCust._id, fullName: foundCust.fullName, phone: foundCust.phone } : customerId,
+          customerName: foundCust?.fullName || 'Walk-in Client',
+          customerPhone: foundCust?.phone || '',
+          serviceId: foundSvc ? { _id: foundSvc._id, name: foundSvc.name, basePrice: foundSvc.basePrice } : serviceId,
+          serviceName: foundSvc?.name || 'Hair & Beauty Service',
+          staffId: foundStaff ? { _id: foundStaff._id, displayName: foundStaff.displayName, jobTitle: foundStaff.jobTitle } : staffId,
+          staffName: foundStaff?.displayName || 'Stylist',
+          appointmentDate: targetDate,
+          startTime,
+          endTime,
+          durationMinutes: duration,
+          totalPrice: foundSvc?.basePrice || 1500,
+          status: 'SCHEDULED',
+          source: source || 'CALENDAR',
+          notes: notes || '',
+          createdAt: new Date().toISOString(),
+        };
+
         const updated = [newAppt, ...appts];
         saveStorageList('appointments', updated);
-        return { status: 200, data: { success: true, data: newAppt, message: 'Appointment booked' } };
+        return { status: 200, data: { success: true, data: newAppt, message: 'Appointment booked successfully' } };
       }
 
+      // PUT /appointments/:id
       if (method === 'put') {
         const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
-        const updated = appts.map((a: any) => (url.includes(a._id) ? { ...a, ...body } : a));
+        const updated = appts.map((a: any) => (url.includes(a._id) || (a.id && url.includes(a.id)) ? { ...a, ...body } : a));
         saveStorageList('appointments', updated);
-        return { status: 200, data: { success: true, message: 'Appointment updated' } };
+        return { status: 200, data: { success: true, message: 'Appointment updated successfully' } };
       }
 
-      return { status: 200, data: { success: true, data: appts } };
+      // GET /appointments?date=...
+      const dateParam = new URLSearchParams(url.split('?')[1] || '').get('date') || '';
+      let filtered = appts;
+      if (dateParam) {
+        filtered = appts.filter((a: any) => {
+          if (!a.appointmentDate) return true;
+          return a.appointmentDate === dateParam || a.appointmentDate.startsWith(dateParam);
+        });
+      }
+      return { status: 200, data: { success: true, data: filtered } };
     }
 
     // 8. Staff & Team

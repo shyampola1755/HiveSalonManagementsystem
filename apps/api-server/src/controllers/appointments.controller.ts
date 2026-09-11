@@ -85,6 +85,20 @@ export const createAppointment = asyncHandler(async (req: AuthRequest, res: Resp
     return;
   }
 
+  // 1. Validate Past Date & Time
+  const apptDateObj = new Date(appointmentDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const startOfDay = new Date(apptDateObj);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+
+  if (startOfDay < today) {
+    res.status(400).json({ success: false, message: 'Cannot schedule appointments for past dates.' });
+    return;
+  }
+
   // Calculate end time
   const [hours, mins] = startTime.split(':').map(Number);
   const startTotalMinutes = hours * 60 + mins;
@@ -92,6 +106,65 @@ export const createAppointment = asyncHandler(async (req: AuthRequest, res: Resp
   const endHours = Math.floor(endTotalMinutes / 60).toString().padStart(2, '0');
   const endMins = (endTotalMinutes % 60).toString().padStart(2, '0');
   const endTime = `${endHours}:${endMins}`;
+
+  if (startOfDay.getTime() === today.getTime()) {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    if (startTotalMinutes <= currentMinutes) {
+      res.status(400).json({ success: false, message: 'Cannot schedule appointments in the past. Please select an upcoming time slot.' });
+      return;
+    }
+  }
+
+  // 2. Prevent Double Booking for Customer (Concurrent Booking Check)
+  const existingCustAppts = await Appointment.find({
+    organizationId: req.organizationId,
+    customerId: customer._id,
+    appointmentDate: { $gte: startOfDay, $lt: endOfDay },
+    status: { $nin: ['CANCELLED', 'NO_SHOW'] },
+  });
+
+  const hasCustConflict = existingCustAppts.some((a) => {
+    const [aH, aM] = (a.startTime || '00:00').split(':').map(Number);
+    const aStart = aH * 60 + (aM || 0);
+    const [eH, eM] = (a.endTime || '00:00').split(':').map(Number);
+    const aEnd = eH * 60 + (eM || 0);
+    return (startTotalMinutes < aEnd && endTotalMinutes > aStart);
+  });
+
+  if (hasCustConflict) {
+    res.status(400).json({
+      success: false,
+      message: `Client ${customer.fullName} already has an active appointment scheduled at this time. Concurrent bookings for the same client are not allowed.`,
+    });
+    return;
+  }
+
+  // 3. Prevent Double Booking for Stylist
+  if (staff) {
+    const existingStaffAppts = await Appointment.find({
+      organizationId: req.organizationId,
+      staffId: staff._id,
+      appointmentDate: { $gte: startOfDay, $lt: endOfDay },
+      status: { $nin: ['CANCELLED', 'NO_SHOW'] },
+    });
+
+    const hasStaffConflict = existingStaffAppts.some((a) => {
+      const [aH, aM] = (a.startTime || '00:00').split(':').map(Number);
+      const aStart = aH * 60 + (aM || 0);
+      const [eH, eM] = (a.endTime || '00:00').split(':').map(Number);
+      const aEnd = eH * 60 + (eM || 0);
+      return (startTotalMinutes < aEnd && endTotalMinutes > aStart);
+    });
+
+    if (hasStaffConflict) {
+      res.status(400).json({
+        success: false,
+        message: `Stylist ${staff.displayName} is already booked at this time. Please select another time or stylist.`,
+      });
+      return;
+    }
+  }
 
   const appointment = await Appointment.create({
     organizationId: req.organizationId,
