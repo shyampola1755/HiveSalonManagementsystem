@@ -277,6 +277,8 @@ const saveStorageList = (key: string, data: any[]): void => {
   } catch (e) {}
 };
 
+const isStandaloneDemo = typeof window !== 'undefined' && (!import.meta.env.VITE_API_URL || window.location.hostname.includes('vercel.app'));
+
 // Request interceptor to attach JWT token and active branch header
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('hive_token');
@@ -296,6 +298,20 @@ apiClient.interceptors.request.use((config) => {
     if (cleanId && cleanId !== '[object Object]') {
       config.headers['x-branch-id'] = cleanId;
     }
+  }
+
+  if (isStandaloneDemo) {
+    config.adapter = async (cfg: any) => {
+      const mockRes = await handleMockFallback(cfg);
+      return {
+        data: mockRes.data,
+        status: mockRes.status || 200,
+        statusText: 'OK',
+        headers: {},
+        config: cfg,
+        request: {},
+      };
+    };
   }
 
   return config;
