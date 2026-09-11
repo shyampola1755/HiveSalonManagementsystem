@@ -9,13 +9,13 @@
   ],
   "scripts": {
     "dev": "turbo run dev",
+    "dev:server": "npm run --workspace=@hive/api-server dev",
+    "dev:client": "npm run --workspace=@hive/web-client dev",
     "build": "turbo run build",
     "type-check": "turbo run type-check",
+    "seed": "npm run --workspace=@hive/api-server seed",
     "lint": "turbo run lint",
-    "clean": "turbo run clean && rimraf node_modules",
-    "db:generate": "npm run --workspace=@hive/database generate",
-    "db:push": "npm run --workspace=@hive/database push",
-    "db:seed": "npm run --workspace=@hive/database seed"
+    "clean": "turbo run clean && rimraf node_modules"
   },
   "devDependencies": {
     "turbo": "^2.4.4",

@@ -1,168 +1,118 @@
-# Hive Salon — Enterprise Multi-Branch Salon, Spa & Clinic Management ERP
+# Hive Salon — Centralized Multi-Branch Enterprise ERP & POS Platform (MERN Stack)
 
-> **A Next-Generation Commercial SaaS Platform for Luxury Salon Networks, Aesthetic Clinics & Wellness Chains.**
+> **A Complete MERN Stack (MongoDB, Express.js, React.js, Node.js) Commercial Platform for Luxury Salon Networks, Spas & Wellness Chains.**
 
-[![Build Status](https://img.shields.io/badge/Build-Passing%20(Turbo%20Monorepo)-emerald.svg)](#)
-[![Security Grade](https://img.shields.io/badge/Security-Multi--Tenant%20RBAC%20Verified-blue.svg)](#)
-[![Zero Mutation](https://img.shields.io/badge/AI%20Layer-Zero--Mutation%20Guaranteed-amber.svg)](#)
+[![Stack](https://img.shields.io/badge/Stack-MERN%20(MongoDB%20%7C%20Express%20%7C%20React%20%7C%20Node)-gold.svg)](#)
+[![Security Grade](https://img.shields.io/badge/Security-JWT%20%2B%20RBAC%20Verified-blue.svg)](#)
 [![Tax Compliance](https://img.shields.io/badge/GST%20Compliance-18%25%20CGST%2BSGST-purple.svg)](#)
 
 ---
 
 ## 🌟 Executive Overview
 
-**Hive Salon** is a centralized, multi-tenant enterprise ERP platform engineered specifically for high-volume luxury salon chains, medical aesthetic clinics, day spas, and personal grooming franchises. 
+**Hive Salon** is a centralized, multi-tenant enterprise ERP & POS platform engineered for high-volume luxury salon chains, medical aesthetic clinics, day spas, and wellness franchises.
 
-Built with strict multi-tier geographic isolation (Organization ➔ State ➔ District ➔ City ➔ Branch), Hive Salon eliminates the operational friction of salon management through:
-- **Zero-Training Front-Desk Receptionist Experience**: Intuitive 9-step guided workflow, speed dial quick actions (`Alt+A`), interactive onboarding tour (`Alt+T`), and searchable in-app knowledge base (`Alt+H`).
-- **Omnichannel Sales & Fulfillment**: Integrated customer storefront with in-store branch pickup OTP/QR verification, multi-carrier courier dispatch, and zero-oversell synchronized inventory.
-- **Dynamic Commission Engine**: Progressive revenue slabs, multi-stylist line-item attribution, double-entry commission ledgers, and automated refund clawbacks.
-- **Hive Salon AI (BI & Text-to-SQL)**: Read-only business analytics with natural language queries, 5 machine learning predictive forecasting models, and automated strategic insights.
-- **Enterprise Customer Retention**: 6 membership archetypes, prepaid wallets with zero-negative-balance enforcement, multi-session service packages, and 4-tier loyalty ledgers.
+### Dual-Portal Operational Architecture:
+1. **⚡ Portal 1: Front-Desk Reception & POS Terminal**
+   - **Interactive Appointments & Stylist Calendar**: Real-time chair scheduling board, duration buffer management, and stylist resource allocation.
+   - **Live Waiting Lounge & Queue**: Walk-in guest tracking, chair seating, and service progress monitoring.
+   - **High-Speed Touch POS**: Instant cart calculation, GST invoice generation, split payments (Cash, Card, UPI, Prepaid Wallet, Loyalty points), custom discounts, and printable receipts.
+   - **Customer CRM 360° Profile**: Hair texture/porosity profiles, technical hair color formulas, safety patch test logs, and prepaid wallet top-ups.
+   - **Memberships & Packages**: VIP privilege tiers (Diamond, Gold) and multi-session pass sales/redemptions.
+   - **Loyalty & Rewards**: Automated points accrual (1 pt per ₹100) with instant POS checkout redemption.
+
+2. **🏛️ Portal 2: Centralized Management & Back-Office ERP**
+   - **Executive BI Overview**: 7-day revenue velocity trends, cross-branch comparative yield, and top category metrics.
+   - **Multi-Branch Network Hierarchy**: State ➔ District ➔ City ➔ Branch geographical organization tree.
+   - **Master Services Catalog**: Dynamic branch pricing overrides, duration buffers, and chemical recipes (BOM).
+   - **Staff & HR Roster**: Stylist profiles, weekly shifts, biometric attendance clock logs, and commission tier plans.
+   - **Centralized Inventory**: Professional back-bar chemical supplies, retail merchandise, low-stock alerts, and stock adjustments.
+   - **Marketing & Automated Retention**: WhatsApp & SMS broadcast campaigns, birthday discounts, and client lapse triggers.
+   - **Financial Ledger & Expenses**: Salon operating expenses, daily cash flow registers, and GST reconciliation reports.
 
 ---
 
-## 🏗️ Architecture & Technology Stack
+## 🏗️ MERN Stack Architecture
 
 ```
-Hive Salon Monorepo (Turbo + npm workspaces)
+Hive Salon Platform (Turborepo)
 ├── apps/
-│   ├── api/                 # NestJS 10 Core REST API & Business Logic
-│   ├── web-admin/           # Next.js 15 App Router Backoffice & Console
-│   ├── web-pos/             # Next.js 15 Tablet & Front-Desk POS Terminal
-│   └── customer-portal/     # Next.js 15 Luxury Guest Portal & Storefront
-└── packages/
-    ├── types/               # Universal TypeScript Domain Definitions
-    ├── database/            # PostgreSQL Schema & Prisma ORM Client
-    ├── ui/                  # Luxury Tailwind Component Library & Design System
-    ├── auth/                # Multi-Tenant RBAC & ScopeGuard Engine
-    ├── validation/          # Zod Request Validation Schemas
-    ├── utilities/           # Currency, Dates, Tax & Error Formatter Utilities
-    ├── events/              # Event Bus & Decoupled Domain Events
-    ├── config/              # Shared ESLint, Prettier, & TypeScript Configs
-    └── audit/               # Immutable Security & Compliance Audit Logging
+│   ├── api-server/         # Express.js REST API Server (Port 5000)
+│   │   ├── src/config/     # MongoDB Connection & Environment Variables
+│   │   ├── src/models/     # Mongoose Schemas (30+ entities, compound indexes)
+│   │   ├── src/controllers/# REST API business logic controllers
+│   │   ├── src/routes/     # Modular Express API routing
+│   │   ├── src/middleware/ # JWT Auth, RBAC, Multi-Branch Scoping, Error Handling
+│   │   └── src/seed.ts     # MongoDB Database Seeder with realistic demo data
+│   │
+│   └── web-client/         # React 18 + Vite SPA Client (Port 3000)
+│       ├── src/views/      # Front-Desk & Back-Office ERP portal views
+│       ├── src/context/    # Auth, POS Cart, and Toast Context Providers
+│       ├── src/components/ # AppShell, Sidebar, StatCards, Modals, Touch POS Grid
+│       └── src/api/        # Axios client instance with JWT auto-interceptor
+│
+└── packages/               # Shared TypeScript configurations & utilities
 ```
-
-| Layer | Technology | Details |
-| :--- | :--- | :--- |
-| **Monorepo Build** | Turborepo 2.10 + npm Workspaces | Remote caching, task pipelining, and parallel builds |
-| **Backend Core** | NestJS 10, TypeScript, Node.js 20 | Modular architecture with dependency injection |
-| **Frontend Apps** | Next.js 15 (App Router), React 19 | Server/Client components, SSR, and dynamic streaming |
-| **Database & ORM** | PostgreSQL 16, Prisma ORM 6.19 | Multi-tenant schema, foreign keys, and indexes |
-| **Styling & Design** | Vanilla Tailwind CSS, Lucide Icons | Luxury dark glassmorphism, curated HSL color tokens |
-| **Event Bus** | Node.js EventEmitter / Redis BullMQ | Decoupled event-driven marketing, stock, and audits |
 
 ---
 
-## ⚡ Quick Start & Local Development
+## ⚡ Quick Start & Setup
 
-### Prerequisites
-- Node.js >= 20.0.0
-- npm >= 10.0.0
-- PostgreSQL >= 15.0
+### 1. Prerequisites
+- **Node.js**: >= 18.0.0
+- **MongoDB**: Local MongoDB server or MongoDB Atlas connection string
 
-### Installation & Launch
-
+### 2. Environment Configuration
+Copy the `.env.example` file:
 ```bash
-# 1. Clone the repository
-git clone https://github.com/hive-salon/hive-salon.git
-cd "Hive Salon"
+cp .env.example .env
+```
+Default connection strings:
+```env
+PORT=5000
+MONGO_URI=mongodb://localhost:27017/hive_salon_db
+JWT_SECRET=hive_salon_enterprise_jwt_super_secret_key_2026
+```
 
-# 2. Install monorepo dependencies
+### 3. Install Dependencies & Seed Database
+```bash
+# Install dependencies across all workspaces
 npm install
 
-# 3. Generate Prisma Database Client
-npm run db:generate
+# Seed MongoDB with realistic enterprise demo data
+npm run seed
+```
 
-# 4. Build all packages and applications
-npm run build
-
-# 5. Start development servers in parallel
+### 4. Run Development Servers
+```bash
+# Concurrently start Express API Server (5000) and React Client (3000)
 npm run dev
 ```
 
-### Access Ports & Applications
-- **Admin Console**: `http://localhost:3000` (Backoffice, Operations, AI, Finance)
-- **Point of Sale (POS)**: `http://localhost:3001` (Front-Desk Billing Terminal)
-- **Guest Portal & Storefront**: `http://localhost:3002` (E-Commerce, Booking)
-- **Core REST API**: `http://localhost:4000/api/v1` (NestJS Gateway)
+Open your browser at **`http://localhost:3000`**.
 
 ---
 
-## 🧭 Operational Modules Breakdown
+## 🔑 Demo Login Profiles
 
-```mermaid
-graph TD
-    A[Hive Salon Core ERP] --> B[Multi-Branch Operations]
-    A --> C[Customer CRM & Retention]
-    A --> D[Point of Sale & Finance]
-    A --> E[Inventory & Procurement]
-    A --> F[Staff & Commissions]
-    A --> G[Hive Salon AI]
-
-    B --> B1[Geographic Tree Hierarchy]
-    B --> B2[Appointment Diary & Calendars]
-    B --> B3[Online Guest Booking Portal]
-
-    C --> C1[Customer 360 Omnichannel History]
-    C --> C2[Prepaid Wallets & Loyalty Points]
-    C --> C3[Marketing Automation & Reviews]
-
-    D --> D1[18% GST Invoicing & Split Payments]
-    D --> D2[Multi-Carrier Retail Fulfillment]
-    D --> D3[Financial Period Audits & Ledgers]
-
-    E --> E1[Backbar Service Consumption Recipes]
-    E --> E2[Atomic Multi-Branch Stock Sync]
-    E --> E3[Inter-Branch Stock Transfers]
-
-    F --> F1[Progressive Commission Slabs]
-    F --> F2[Multi-Stylist Attribution Splits]
-    F --> F3[Biometric Attendance & Payroll]
-
-    G --> G1[Text-to-SQL Natural Language Queries]
-    G --> G2[Predictive ML Forecasting Suite]
-    G --> G3[Zero-Mutation Security AST Validator]
-```
+| Role | Email | Password | Description |
+| :--- | :--- | :--- | :--- |
+| **Super Admin** | `admin@hivesalon.com` | `Password123!` | Full enterprise access across all portals |
+| **Branch Manager** | `manager@hivesalon.com` | `Password123!` | Branch operational & staff management |
+| **Front Desk** | `frontdesk@hivesalon.com` | `Password123!` | Front-desk appointment booking & POS billing |
 
 ---
 
-## ⌨️ Global Keyboard Shortcuts
+## 📡 Core REST API Endpoints
 
-| Shortcut | Action | Description |
-| :--- | :--- | :--- |
-| `Ctrl + K` | **Global Command Palette** | Instant search across Customers, Staff, Services, Invoices, and Branches |
-| `Ctrl + /` | **Contextual Help Drawer** | Screen-specific operational guide explaining "What is this?" and "How it works" |
-| `Alt + A` | **Global Quick Actions** | Speed dial modal to launch New Appointment, New Sale, Customer, or Staff |
-| `Alt + H` | **In-App Help Center** | Searchable knowledge base covering 10 major operational domains |
-| `Alt + T` | **Guided Product Tour** | Interactive 8-step walkthrough of the entire system |
-| `Alt + R` | **Receptionist 9-Step Guide** | Step-by-step SOP drawer for front-desk staff |
-
----
-
-## 🛡️ Enterprise Security & Compliance
-
-- **Multi-Tenant Isolation**: Programmatically enforced `organization_id` foreign key predicates on every query.
-- **Geographic RBAC Scoping**: Scopes users by `Organization` ➔ `State` ➔ `District` ➔ `City` ➔ `Branch`.
-- **Zero-Mutation AI**: Hive Salon AI strictly rejects `INSERT`, `UPDATE`, `DELETE`, `DROP`, `ALTER`, `TRUNCATE`, comments (`--`, `/*`), and multi-statements (`;`).
-- **Account Lockout**: 5 consecutive failed attempts trigger temporary lockout.
-- **Audit Logging**: Immutable tracking of every write, role modification, discount override, and AI query.
-
----
-
-## 📚 Complete Documentation Suite
-
-- [ARCHITECTURE.md](docs/ARCHITECTURE.md) — Modular Monolith Blueprint & Monorepo Design
-- [DATABASE.md](docs/DATABASE.md) — Schema Reference, Entity Relations & Ledgers
-- [SECURITY.md](docs/SECURITY.md) — RBAC Scope Guards, Threat Modeling & AST Validator
-- [API.md](docs/API.md) — REST API Endpoints & Request/Response Contracts
-- [DEPLOYMENT.md](docs/DEPLOYMENT.md) — Production Deployment, Docker & PostgreSQL Setup
-- [USER_GUIDE.md](docs/USER_GUIDE.md) — Zero-Training Receptionist & Stylist Handbook
-- [ADMIN_GUIDE.md](docs/ADMIN_GUIDE.md) — Enterprise Multi-Branch Configuration Manual
-- [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) — Diagnostics, Error Codes & Operational Playbooks
-
----
-
-## 📄 License & Commercial Rights
-
-Copyright © 2026 Hive Salon Technologies. All rights reserved. Commercial Enterprise License.
+- **Auth**: `POST /api/v1/auth/login`, `GET /api/v1/auth/me`
+- **Branches**: `GET /api/v1/branches`, `GET /api/v1/branches/hierarchy`, `POST /api/v1/branches`
+- **Customers**: `GET /api/v1/customers`, `GET /api/v1/customers/:id`, `POST /api/v1/customers/:id/wallet`
+- **Services**: `GET /api/v1/services`, `GET /api/v1/services/categories`, `POST /api/v1/services`
+- **Staff**: `GET /api/v1/staff`, `GET /api/v1/staff/attendance`, `POST /api/v1/staff/attendance/clock`
+- **Appointments**: `GET /api/v1/appointments`, `GET /api/v1/appointments/queue`, `POST /api/v1/appointments`
+- **POS & Billing**: `GET /api/v1/pos/invoices`, `POST /api/v1/pos/checkout`
+- **Inventory**: `GET /api/v1/inventory/products`, `POST /api/v1/inventory/adjust`
+- **Memberships**: `GET /api/v1/memberships/tiers`, `POST /api/v1/memberships/subscribe`
+- **Finance**: `GET /api/v1/finance/expenses`, `POST /api/v1/finance/expenses`
+- **Reports**: `GET /api/v1/reports/dashboard`
