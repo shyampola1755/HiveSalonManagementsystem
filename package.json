@@ -18,9 +18,10 @@
     "clean": "turbo run clean && rimraf node_modules"
   },
   "devDependencies": {
+    "puppeteer-core": "^25.10.0",
+    "rimraf": "^6.0.1",
     "turbo": "^2.4.4",
-    "typescript": "^5.7.3",
-    "rimraf": "^6.0.1"
+    "typescript": "^5.7.3"
   },
   "allowScripts": {},
   "packageManager": "npm@10.9.2"

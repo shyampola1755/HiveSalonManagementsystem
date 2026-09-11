@@ -2,14 +2,43 @@ import React, { useState, useEffect } from 'react';
 import { apiClient } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { Users, Clock, Calendar, CheckCircle2, ShieldCheck, X } from 'lucide-react';
+import {
+  Users,
+  Clock,
+  Calendar,
+  CheckCircle2,
+  ShieldCheck,
+  Plus,
+  X,
+  Mail,
+  Lock,
+  Building2,
+  Briefcase,
+  Sparkles,
+} from 'lucide-react';
 
 export const TeamView: React.FC = () => {
-  const { activeBranchId } = useAuth();
+  const { activeBranchId, branches } = useAuth();
   const { showToast } = useToast();
   const [staff, setStaff] = useState<any[]>([]);
   const [attendance, setAttendance] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'DIRECTORY' | 'ATTENDANCE'>('DIRECTORY');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    password: 'Password123!',
+    phone: '',
+    role: 'BRANCH_MANAGER',
+    staffType: 'MANAGER',
+    jobTitle: 'Branch Operations Manager',
+    primaryBranchId: '',
+    commissionRate: 15,
+    monthlyRevenueTarget: 100000,
+    specialization: 'Branch Management & VIP Care',
+  });
 
   const fetchData = async () => {
     try {
@@ -28,6 +57,76 @@ export const TeamView: React.FC = () => {
     fetchData();
   }, [activeBranchId]);
 
+  useEffect(() => {
+    if (branches && branches.length > 0 && !formData.primaryBranchId) {
+      setFormData((prev) => ({
+        ...prev,
+        primaryBranchId: String(branches[0].id || (branches[0] as any)._id),
+      }));
+    }
+  }, [branches]);
+
+  const handleRoleChange = (newRole: string) => {
+    let defaultType = 'STYLIST';
+    let defaultTitle = 'Senior Stylist';
+    let defaultComm = 20;
+
+    if (newRole === 'BRANCH_MANAGER') {
+      defaultType = 'MANAGER';
+      defaultTitle = 'Branch Operations Manager';
+      defaultComm = 10;
+    } else if (newRole === 'FRONT_DESK') {
+      defaultType = 'FRONT_DESK';
+      defaultTitle = 'Front Desk & POS Coordinator';
+      defaultComm = 5;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      role: newRole,
+      staffType: defaultType,
+      jobTitle: defaultTitle,
+      commissionRate: defaultComm,
+    }));
+  };
+
+  const handleCreateStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.primaryBranchId && branches.length > 0) {
+      formData.primaryBranchId = String(branches[0].id || (branches[0] as any)._id);
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await apiClient.post('/staff', {
+        ...formData,
+        specialization: formData.specialization ? [formData.specialization] : [],
+      });
+      if (res.data.success) {
+        showToast(`Staff member & login created for ${formData.fullName}!`, 'success');
+        setShowAddModal(false);
+        setFormData({
+          fullName: '',
+          email: '',
+          password: 'Password123!',
+          phone: '',
+          role: 'BRANCH_MANAGER',
+          staffType: 'MANAGER',
+          jobTitle: 'Branch Operations Manager',
+          primaryBranchId: branches[0] ? String(branches[0].id || (branches[0] as any)._id) : '',
+          commissionRate: 15,
+          monthlyRevenueTarget: 100000,
+          specialization: 'Branch Management & VIP Care',
+        });
+        await fetchData();
+      }
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to create staff member', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 glass-card p-5">
@@ -37,27 +136,38 @@ export const TeamView: React.FC = () => {
           </div>
           <div>
             <h2 className="text-lg font-extrabold text-white">Staff Roster, Stylists & Attendance</h2>
-            <p className="text-xs text-slate-400">Employee profiles, commission structures, shifts, and biometric clock logs</p>
+            <p className="text-xs text-slate-400">
+              Employee profiles, branch login credentials, commission structures, and attendance
+            </p>
           </div>
         </div>
 
-        <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => setActiveTab('DIRECTORY')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'DIRECTORY' ? 'bg-brand-500 text-slate-950' : 'text-slate-400 hover:text-white'
-            }`}
+            onClick={() => setShowAddModal(true)}
+            className="btn-gold text-xs font-bold px-4 py-2 flex items-center gap-2"
           >
-            Staff Directory ({staff.length})
+            <Plus className="w-4 h-4" /> Add Staff / Branch Login
           </button>
-          <button
-            onClick={() => setActiveTab('ATTENDANCE')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'ATTENDANCE' ? 'bg-brand-500 text-slate-950' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Today's Attendance Logs
-          </button>
+
+          <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+            <button
+              onClick={() => setActiveTab('DIRECTORY')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'DIRECTORY' ? 'bg-brand-500 text-slate-950' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Staff Directory ({staff.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('ATTENDANCE')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === 'ATTENDANCE' ? 'bg-brand-500 text-slate-950' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Today's Attendance Logs
+            </button>
+          </div>
         </div>
       </div>
 
@@ -73,15 +183,30 @@ export const TeamView: React.FC = () => {
 
                 <div className="mt-4 flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-brand-400 to-amber-600 flex items-center justify-center font-bold text-slate-950 text-base shadow-sm">
-                    {member.displayName.charAt(0)}
+                    {member.displayName?.charAt(0) || 'S'}
                   </div>
                   <div>
                     <h3 className="font-bold text-sm text-white">{member.displayName}</h3>
                     <p className="text-xs text-brand-300 font-medium">{member.jobTitle}</p>
+                    {member.userId?.email && (
+                      <p className="text-[11px] text-slate-400 mt-0.5">{member.userId.email}</p>
+                    )}
                   </div>
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-slate-800 space-y-1.5 text-xs text-slate-300">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Assigned Branch:</span>
+                    <span className="font-bold text-brand-400">
+                      {member.primaryBranchId?.name || 'All Branches'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Login Role:</span>
+                    <span className="font-bold text-purple-300">
+                      {member.userId?.role?.replace('_', ' ') || member.staffType}
+                    </span>
+                  </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Commission Rate:</span>
                     <span className="font-bold text-emerald-400">{member.commissionRate}%</span>
@@ -90,18 +215,14 @@ export const TeamView: React.FC = () => {
                     <span className="text-slate-400">Monthly Target:</span>
                     <span className="font-bold text-white">₹{member.monthlyRevenueTarget?.toLocaleString('en-IN')}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Specialization:</span>
-                    <span className="text-slate-200 line-clamp-1">{member.specialization?.join(', ') || 'General'}</span>
-                  </div>
                 </div>
               </div>
 
               <div className="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
                 <span className="flex items-center gap-1.5 text-emerald-400 font-semibold">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Available for Booking
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Active Login Ready
                 </span>
-                <span className="text-slate-400 text-[11px]">{member.primaryBranchId?.name || 'Main Branch'}</span>
+                <span className="text-slate-400 font-mono text-[11px]">{member.primaryBranchId?.code || 'HQ'}</span>
               </div>
             </div>
           ))}
@@ -147,6 +268,158 @@ export const TeamView: React.FC = () => {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Add Staff / Branch Login Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-lg w-full glass-card p-6 border-slate-800 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-brand-400" /> Create Staff Member & Branch Login
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Creates employee profile and user login credentials for the assigned branch
+                </p>
+              </div>
+              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateStaff} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  placeholder="e.g. Kavya Rao"
+                  className="input-field"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Login Email Address *</label>
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="kavya@hivesalon.com"
+                    className="input-field"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Password *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Password123!"
+                    className="input-field font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Assign to Branch *</label>
+                  <select
+                    value={formData.primaryBranchId}
+                    onChange={(e) => setFormData({ ...formData, primaryBranchId: e.target.value })}
+                    className="input-field font-medium bg-slate-950"
+                  >
+                    {branches.map((b) => {
+                      const bId = String(b.id || (b as any)._id);
+                      return (
+                        <option key={bId} value={bId}>
+                          {b.name} ({b.code})
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">System Role *</label>
+                  <select
+                    value={formData.role}
+                    onChange={(e) => handleRoleChange(e.target.value)}
+                    className="input-field font-medium bg-slate-950"
+                  >
+                    <option value="BRANCH_MANAGER">Branch Manager (Floor Hub & Reports)</option>
+                    <option value="FRONT_DESK">Front Desk Coordinator (POS & Queue)</option>
+                    <option value="STYLIST">Senior Stylist (Chair & Formulas)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Job Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.jobTitle}
+                    onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
+                    className="input-field"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="+91 98765 00000"
+                    className="input-field"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Commission Rate (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={formData.commissionRate}
+                    onChange={(e) => setFormData({ ...formData, commissionRate: Number(e.target.value) })}
+                    className="input-field"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Monthly Target (₹)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1000"
+                    value={formData.monthlyRevenueTarget}
+                    onChange={(e) => setFormData({ ...formData, monthlyRevenueTarget: Number(e.target.value) })}
+                    className="input-field"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="btn-gold w-full py-3 font-bold text-xs mt-2"
+              >
+                {isSubmitting ? 'Creating Profile & Login...' : 'Create Staff Member & Login Credentials'}
+              </button>
+            </form>
           </div>
         </div>
       )}

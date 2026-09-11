@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { apiClient } from '../api/client';
 
 export interface UserBranch {
   id: string;
+  _id?: string;
   name: string;
   code: string;
   isMainBranch?: boolean;
@@ -27,6 +28,7 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
+  branches: UserBranch[];
   activeBranchId: string | null;
   activePortal: 'front-desk' | 'back-office';
   isLoading: boolean;
@@ -39,6 +41,7 @@ interface AuthContextType {
   logout: () => void;
   setActiveBranchId: (branchId: string) => void;
   setActivePortal: (portal: 'front-desk' | 'back-office') => void;
+  refreshBranches: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,6 +53,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('hive_token'));
+
+  const [branches, setBranches] = useState<UserBranch[]>(() => {
+    if (user?.branches && user.branches.length > 0) {
+      return user.branches.map((b) => ({
+        id: b.id || (b as any)._id,
+        _id: b.id || (b as any)._id,
+        name: b.name,
+        code: b.code,
+        isMainBranch: b.isMainBranch,
+      }));
+    }
+    return [
+      { id: 'hyd-01', name: 'Hyderabad Flagship (Banjara Hills)', code: 'HYD-01', isMainBranch: true },
+      { id: 'mum-01', name: 'Mumbai Salon & Spa (Bandra West)', code: 'MUM-01' },
+      { id: 'blr-01', name: 'Bangalore Lounge (Indiranagar)', code: 'BLR-01' },
+    ];
+  });
 
   const [activeBranchId, setActiveBranchState] = useState<string | null>(() => {
     return localStorage.getItem('hive_active_branch') || (user?.primaryBranchId ? String(user.primaryBranchId) : null);
@@ -72,6 +92,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isStylist = user?.role === 'STYLIST';
   const canAccessBackOffice = isSuperAdmin || isManager;
 
+  const refreshBranches = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await apiClient.get('/branches');
+      if (res.data.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+        const formatted: UserBranch[] = res.data.data.map((b: any) => ({
+          id: b._id || b.id,
+          _id: b._id || b.id,
+          name: b.name,
+          code: b.code,
+          isMainBranch: b.isMainBranch,
+        }));
+        setBranches(formatted);
+        if (user) {
+          const updatedUser = { ...user, branches: formatted };
+          setUser(updatedUser);
+          localStorage.setItem('hive_user', JSON.stringify(updatedUser));
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch dynamic branches:', e);
+    }
+  }, [token, user]);
+
   const login = (newToken: string, userData: User): string => {
     setToken(newToken);
     setUser(userData);
@@ -81,6 +125,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const branch = userData.primaryBranchId || (userData.branches && userData.branches[0]?.id);
     if (branch) {
       setActiveBranchId(String(branch));
+    }
+
+    if (userData.branches && userData.branches.length > 0) {
+      setBranches(
+        userData.branches.map((b) => ({
+          id: b.id || (b as any)._id,
+          _id: b.id || (b as any)._id,
+          name: b.name,
+          code: b.code,
+          isMainBranch: b.isMainBranch,
+        }))
+      );
     }
 
     // Determine initial portal and landing destination based on role
@@ -133,6 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(res.data.user);
             localStorage.setItem('hive_user', JSON.stringify(res.data.user));
           }
+          await refreshBranches();
         } catch (e) {
           logout();
         }
@@ -147,6 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         token,
+        branches,
         activeBranchId,
         activePortal,
         isLoading,
@@ -159,6 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         setActiveBranchId,
         setActivePortal,
+        refreshBranches,
       }}
     >
       {children}

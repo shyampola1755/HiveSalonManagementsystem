@@ -20,6 +20,7 @@ export const AppShell: React.FC = () => {
   const {
     user,
     logout,
+    branches,
     activeBranchId,
     setActiveBranchId,
     activePortal,
@@ -44,13 +45,16 @@ export const AppShell: React.FC = () => {
     }
   };
 
-  const branches = user?.branches || [
+  const branchList = branches && branches.length > 0 ? branches : [
     { id: 'hyd-01', name: 'Hyderabad Flagship (Banjara Hills)', code: 'HYD-01' },
     { id: 'mum-01', name: 'Mumbai Salon & Spa (Bandra West)', code: 'MUM-01' },
     { id: 'blr-01', name: 'Bangalore Lounge (Indiranagar)', code: 'BLR-01' },
   ];
 
-  const activeBranchName = branches.find((b) => b.id === activeBranchId)?.name || branches[0]?.name || 'Hyderabad Flagship';
+  const activeBranchName =
+    branchList.find((b) => String(b.id || (b as any)._id) === String(activeBranchId))?.name ||
+    branchList[0]?.name ||
+    'Hyderabad Flagship';
 
   return (
     <div className="flex min-h-screen bg-[#0b0f19] text-slate-100">
@@ -112,11 +116,14 @@ export const AppShell: React.FC = () => {
                   onChange={(e) => setActiveBranchId(e.target.value)}
                   className="bg-slate-950/70 border border-slate-800 text-xs font-medium rounded-xl pl-9 pr-8 py-2 text-slate-200 focus:outline-none focus:border-brand-500 appearance-none cursor-pointer hover:border-slate-700 transition-colors"
                 >
-                  {branches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
+                  {branchList.map((b) => {
+                    const bId = String(b.id || (b as any)._id);
+                    return (
+                      <option key={bId} value={bId}>
+                        {b.name}
+                      </option>
+                    );
+                  })}
                 </select>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 pointer-events-none" />
               </div>

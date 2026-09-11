@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../../api/client';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { Building2, Plus, MapPin, Phone, Mail, CheckCircle2, ChevronRight, X } from 'lucide-react';
 
@@ -33,6 +34,7 @@ export const BranchesView: React.FC = () => {
     fetchData();
   }, []);
 
+  const { refreshBranches } = useAuth();
   const handleCreateBranch = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -40,7 +42,9 @@ export const BranchesView: React.FC = () => {
       if (res.data.success) {
         showToast('Branch location added successfully!', 'success');
         setShowModal(false);
-        fetchData();
+        setFormData({ name: '', code: '', address: '', phone: '', email: '' });
+        await fetchData();
+        await refreshBranches();
       }
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to add branch', 'error');

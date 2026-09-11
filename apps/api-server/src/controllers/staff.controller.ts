@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import asyncHandler from 'express-async-handler';
+import bcrypt from 'bcryptjs';
 import { StaffProfile, ShiftTemplate, StaffAttendanceRecord, StaffLeaveRequest } from '../models/Staff';
 import { User } from '../models/User';
 import { AuthRequest } from '../middleware/auth';
@@ -22,6 +23,70 @@ export const getStaff = asyncHandler(async (req: AuthRequest, res: Response) => 
     .sort({ displayName: 1 });
 
   res.json({ success: true, count: staff.length, data: staff });
+});
+
+// @desc    Create new staff profile & login user
+// @route   POST /api/v1/staff
+export const createStaff = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const {
+    fullName,
+    email,
+    password = 'Password123!',
+    phone,
+    role = 'STYLIST',
+    staffType = 'STYLIST',
+    jobTitle = 'Senior Stylist',
+    primaryBranchId,
+    commissionRate = 20,
+    monthlyRevenueTarget = 100000,
+    specialization = [],
+  } = req.body;
+
+  if (!fullName || !email || !primaryBranchId) {
+    res.status(400).json({ success: false, message: 'Please provide full name, email, and branch assignment.' });
+    return;
+  }
+
+  // Check if user already exists
+  const existingUser = await User.findOne({ email: email.toLowerCase() });
+  let user = existingUser;
+  if (!user) {
+    const passwordHash = await bcrypt.hash(password, 10);
+    user = await User.create({
+      organizationId: req.organizationId,
+      email: email.toLowerCase(),
+      phone: phone || '+91 90000 00000',
+      fullName,
+      passwordHash,
+      role,
+      primaryBranchId,
+      branches: [primaryBranchId],
+    });
+  }
+
+  // Create staff profile
+  const employeeCount = await StaffProfile.countDocuments({ organizationId: req.organizationId });
+  const employeeCode = `EMP-${(employeeCount + 1).toString().padStart(3, '0')}`;
+
+  const staff = await StaffProfile.create({
+    organizationId: req.organizationId,
+    userId: user._id,
+    employeeCode,
+    displayName: fullName,
+    jobTitle,
+    staffType,
+    specialization: Array.isArray(specialization) ? specialization : [specialization],
+    commissionRate,
+    monthlyRevenueTarget,
+    primaryBranchId,
+    assignedBranchIds: [primaryBranchId],
+  });
+
+  const populatedStaff = await StaffProfile.findById(staff._id)
+    .populate('primaryBranchId', 'name code')
+    .populate('userId', 'email fullName avatarUrl role');
+
+  res.status(201).json({ success: true, data: populatedStaff });
 });
 
 // @desc    Get staff attendance logs

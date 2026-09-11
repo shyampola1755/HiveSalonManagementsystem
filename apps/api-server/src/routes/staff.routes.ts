@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getStaff,
+  createStaff,
   getAttendance,
   clockAttendance,
   getLeaves,
@@ -13,6 +14,7 @@ const router = Router();
 router.use(authenticateJWT);
 
 router.get('/', getStaff);
+router.post('/', createStaff);
 router.get('/attendance', getAttendance);
 router.post('/attendance/clock', clockAttendance);
 router.get('/leaves', getLeaves);
