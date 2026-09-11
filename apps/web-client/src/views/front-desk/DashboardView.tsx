@@ -198,7 +198,7 @@ export const DashboardView: React.FC = () => {
                       {app.status.replace('_', ' ')}
                     </span>
                     <button
-                      onClick={() => navigate('/front-desk/pos')}
+                      onClick={() => navigate('/front-desk/pos', { state: { appointment: app } })}
                       className="p-2 rounded-lg bg-slate-800 hover:bg-brand-500 hover:text-slate-950 text-slate-300 transition-colors"
                       title="Bill to POS"
                     >

@@ -160,12 +160,27 @@ export const processCheckout = asyncHandler(async (req: AuthRequest, res: Respon
   customer.loyaltyPoints = (customer.loyaltyPoints || 0) + earnedPoints;
   await customer.save();
 
-  // If appointment was attached, mark it completed
+  // If appointment was attached or customer has active appointments, mark them completed
   if (appointmentId && mongoose.Types.ObjectId.isValid(String(appointmentId))) {
     await Appointment.findByIdAndUpdate(appointmentId, {
       status: 'COMPLETED',
       invoiceId: invoice._id,
     });
+  } else if (customer?._id) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    await Appointment.updateMany(
+      {
+        organizationId: req.organizationId,
+        customerId: customer._id,
+        appointmentDate: { $gte: today, $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) },
+        status: { $in: ['IN_SERVICE', 'CHECKED_IN', 'SCHEDULED', 'CONFIRMED'] },
+      },
+      {
+        status: 'COMPLETED',
+        invoiceId: invoice._id,
+      }
+    );
   }
 
   // Deduct stock for product items sold

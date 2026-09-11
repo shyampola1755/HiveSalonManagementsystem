@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { apiClient } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react';
 
 export const PosView: React.FC = () => {
+  const location = useLocation();
   const { activeBranchId } = useAuth();
   const { showToast } = useToast();
   const {
@@ -42,6 +44,7 @@ export const PosView: React.FC = () => {
     clearCart,
   } = useCart();
 
+  const [attachedAppointmentId, setAttachedAppointmentId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'SERVICES' | 'PRODUCTS'>('SERVICES');
   const [categories, setCategories] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -51,6 +54,42 @@ export const PosView: React.FC = () => {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
   const [staffList, setStaffList] = useState<any[]>([]);
+
+  // Pre-load customer & service if navigated from Queue or Dashboard appointment
+  useEffect(() => {
+    if (location.state?.appointment) {
+      const app = location.state.appointment;
+      setAttachedAppointmentId(app._id || app.id);
+      if (app.customerId || app.customerName) {
+        const rawCust = app.customerId;
+        const c = typeof rawCust === 'object' && rawCust !== null ? rawCust : { _id: rawCust, fullName: app.customerName, phone: app.customerPhone };
+        setCustomer({
+          id: c._id || c.id || `c_${Date.now()}`,
+          fullName: c.fullName || app.customerName,
+          phone: c.phone || app.customerPhone,
+          email: c.email,
+          walletBalance: c.walletBalance || 0,
+          loyaltyPoints: c.loyaltyPoints || 0,
+        });
+      }
+      if (app.serviceName || app.serviceId) {
+        const rawSvc = app.serviceId;
+        const svcId = typeof rawSvc === 'object' && rawSvc !== null ? rawSvc._id : (rawSvc || 'srv-item');
+        const svcName = typeof rawSvc === 'object' && rawSvc !== null ? rawSvc.name : (app.serviceName || 'Salon Service');
+        const price = app.totalPrice || (typeof rawSvc === 'object' && rawSvc !== null ? rawSvc.basePrice : 1500);
+        addItem({
+          itemType: 'SERVICE',
+          itemId: svcId,
+          name: svcName,
+          quantity: 1,
+          unitPrice: price,
+          taxRate: 18,
+          staffId: app.staffId?._id || app.staffId?.id || app.staffId,
+          staffName: app.staffName || app.staffId?.displayName,
+        });
+      }
+    }
+  }, [location.state]);
 
   // Checkout Modal State
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
@@ -147,6 +186,7 @@ export const PosView: React.FC = () => {
         customerName: customer.fullName,
         customerPhone: customer.phone,
         branchId: activeBranchId,
+        appointmentId: attachedAppointmentId || undefined,
         items: items.map((i) => ({
           itemType: i.itemType,
           itemId: i.itemId,
@@ -171,6 +211,7 @@ export const PosView: React.FC = () => {
       const res = await apiClient.post('/pos/checkout', payload);
       if (res.data.success) {
         setCompletedInvoice(res.data.data);
+        setAttachedAppointmentId(null);
         clearCart();
         setShowCheckoutModal(false);
         showToast('Payment successful & Invoice created!', 'success');

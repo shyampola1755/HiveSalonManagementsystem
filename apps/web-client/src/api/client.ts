@@ -694,12 +694,20 @@ apiClient.interceptors.response.use(
         return { status: 200, data: { success: true, data: newAppt, message: 'Appointment booked successfully' } };
       }
 
-      // PUT /appointments/:id
+      // PUT /appointments/:id or PUT /appointments/:id/status
       if (method === 'put') {
         const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
         const updated = appts.map((a: any) => (url.includes(a._id) || (a.id && url.includes(a.id)) ? { ...a, ...body } : a));
         saveStorageList('appointments', updated);
         return { status: 200, data: { success: true, message: 'Appointment updated successfully' } };
+      }
+
+      // GET /appointments/queue (Waiting Lounge & Active In-Service chairs)
+      if (url.includes('/appointments/queue')) {
+        const activeQueue = appts.filter((a: any) =>
+          ['CHECKED_IN', 'IN_SERVICE', 'SCHEDULED', 'CONFIRMED'].includes(a.status)
+        );
+        return { status: 200, data: { success: true, count: activeQueue.length, data: activeQueue } };
       }
 
       // GET /appointments?date=...
@@ -885,6 +893,29 @@ apiClient.interceptors.response.use(
         });
         saveStorageList('customers', updatedCustomers);
       }
+
+      // Mark matching active appointments as COMPLETED
+      const appts = getStorageList('appointments', INITIAL_APPOINTMENTS);
+      const targetCustId = body.customerId || foundCust?._id || foundCust?.id;
+      const targetCustName = (body.customerName || foundCust?.fullName || '').toLowerCase();
+      const targetApptId = body.appointmentId;
+
+      const updatedAppts = appts.map((a: any) => {
+        const aCustId = a.customerId?._id || a.customerId?.id || a.customerId;
+        const matchesAppt = targetApptId && (a._id === targetApptId || a.id === targetApptId);
+        const matchesCust = targetCustId && aCustId === targetCustId;
+        const matchesName = targetCustName && (a.customerName || '').toLowerCase() === targetCustName;
+        if (matchesAppt || ((matchesCust || matchesName) && ['IN_SERVICE', 'CHECKED_IN', 'SCHEDULED', 'CONFIRMED'].includes(a.status))) {
+          return {
+            ...a,
+            status: 'COMPLETED',
+            invoiceId: newInvoice._id,
+            completedAt: new Date().toISOString(),
+          };
+        }
+        return a;
+      });
+      saveStorageList('appointments', updatedAppts);
 
       return {
         status: 200,

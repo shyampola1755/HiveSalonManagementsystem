@@ -134,10 +134,17 @@ export const QueueView: React.FC = () => {
 
                   <div className="flex gap-2 pt-2 border-t border-slate-800/60">
                     <button
-                      onClick={() => navigate('/front-desk/pos')}
+                      onClick={() => navigate('/front-desk/pos', { state: { appointment: guest } })}
                       className="btn-gold flex-1 py-1.5 text-xs font-bold"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" /> Complete & Bill at POS
+                    </button>
+                    <button
+                      onClick={() => updateStatus(guest._id || guest.id, 'COMPLETED')}
+                      className="btn-secondary py-1.5 px-3 text-xs font-semibold hover:bg-emerald-600/30 hover:text-emerald-300"
+                      title="Mark service as completed"
+                    >
+                      Done
                     </button>
                   </div>
                 </div>
