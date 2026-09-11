@@ -15,6 +15,9 @@ import {
   AlertTriangle,
   Info,
   CalendarDays,
+  UserCheck,
+  Sparkles,
+  Phone,
 } from 'lucide-react';
 
 const TIME_SLOTS = [
@@ -203,10 +206,13 @@ export const CalendarView: React.FC = () => {
       return;
     }
 
-    // 3. Validation: Stylist Overlapping Appointment Check
-    if (formData.staffId) {
-      const selectedStaff = staffList.find((s) => s._id === formData.staffId || s.id === formData.staffId);
-      const staffDisplayName = selectedStaff?.displayName || 'Selected Stylist';
+    // 3. Stylist Resolution: Specific Stylist OR "Any Available Stylist"
+    let assignedStaffId = formData.staffId;
+    let assignedStaffDisplayName = '';
+
+    if (assignedStaffId) {
+      const selectedStaff = staffList.find((s) => s._id === assignedStaffId || s.id === assignedStaffId);
+      assignedStaffDisplayName = selectedStaff?.displayName || 'Selected Stylist';
 
       const staffConflict = appointments.find((a) => {
         if (a.status === 'CANCELLED' || a.status === 'NO_SHOW') return false;
@@ -215,7 +221,7 @@ export const CalendarView: React.FC = () => {
         if (apptDateStr && apptDateStr !== selectedDate) return false;
 
         const apptStaffId = a.staffId?._id || a.staffId?.id || a.staffId;
-        const isSameStaff = apptStaffId === formData.staffId || (a.staffName && selectedStaff && a.staffName.toLowerCase() === selectedStaff.displayName.toLowerCase());
+        const isSameStaff = apptStaffId === assignedStaffId || (a.staffName && selectedStaff && a.staffName.toLowerCase() === selectedStaff.displayName.toLowerCase());
         if (!isSameStaff) return false;
 
         const [aH, aM] = (a.startTime || '00:00').split(':').map(Number);
@@ -231,9 +237,43 @@ export const CalendarView: React.FC = () => {
 
       if (staffConflict) {
         showToast(
-          `Stylist ${staffDisplayName} is already booked at ${formatTime12h(staffConflict.startTime)} for another client (${staffConflict.customerName || 'Client'}). Please choose a different stylist or time slot.`,
+          `Stylist ${assignedStaffDisplayName} is already booked at ${formatTime12h(staffConflict.startTime)} for another client (${staffConflict.customerName || 'Client'}). Please choose a different stylist or time slot.`,
           'error'
         );
+        return;
+      }
+    } else {
+      // Auto-assign first free stylist for "Any Available Stylist"
+      const freeStaff = staffList.find((st) => {
+        const conflict = appointments.find((a) => {
+          if (a.status === 'CANCELLED' || a.status === 'NO_SHOW') return false;
+
+          const apptDateStr = a.appointmentDate ? (typeof a.appointmentDate === 'string' ? a.appointmentDate.split('T')[0] : '') : selectedDate;
+          if (apptDateStr && apptDateStr !== selectedDate) return false;
+
+          const apptStaffId = a.staffId?._id || a.staffId?.id || a.staffId;
+          const isSameStaff = apptStaffId === st._id || apptStaffId === st.id || (a.staffName && a.staffName.toLowerCase() === st.displayName.toLowerCase());
+          if (!isSameStaff) return false;
+
+          const [aH, aM] = (a.startTime || '00:00').split(':').map(Number);
+          const aStartMin = aH * 60 + (aM || 0);
+          let aEndMin = aStartMin + (Number(a.durationMinutes) || 60);
+          if (a.endTime) {
+            const [eH, eM] = a.endTime.split(':').map(Number);
+            aEndMin = eH * 60 + (eM || 0);
+          }
+
+          return newStartMin < aEndMin && newEndMin > aStartMin;
+        });
+
+        return !conflict;
+      });
+
+      if (freeStaff) {
+        assignedStaffId = freeStaff._id || freeStaff.id;
+        assignedStaffDisplayName = freeStaff.displayName;
+      } else if (staffList.length > 0) {
+        showToast('All stylists are fully booked for this time slot. Please choose another time slot.', 'error');
         return;
       }
     }
@@ -241,10 +281,14 @@ export const CalendarView: React.FC = () => {
     try {
       const res = await apiClient.post('/appointments', {
         ...formData,
+        staffId: assignedStaffId,
         appointmentDate: selectedDate,
       });
       if (res.data.success) {
-        showToast('Appointment booked successfully!', 'success');
+        const msg = assignedStaffDisplayName
+          ? `Appointment booked & assigned to ${assignedStaffDisplayName}!`
+          : 'Appointment booked successfully!';
+        showToast(msg, 'success');
         setShowBookingModal(false);
         fetchData();
       }
@@ -254,6 +298,17 @@ export const CalendarView: React.FC = () => {
   };
 
   const allSlotsPassedToday = selectedDate === todayDateStr && TIME_SLOTS.every((s) => isSlotInPast(selectedDate, s));
+
+  // Check if there are any unassigned appointments for this date
+  const unassignedAppts = appointments.filter((a) => {
+    if (a.status === 'CANCELLED') return false;
+    const aDateStr = a.appointmentDate ? (typeof a.appointmentDate === 'string' ? a.appointmentDate.split('T')[0] : '') : selectedDate;
+    if (aDateStr && aDateStr !== selectedDate) return false;
+    const hasStaff = staffList.some((s) => (a.staffId?._id || a.staffId) === s._id || a.staffName === s.displayName);
+    return !hasStaff;
+  });
+
+  const displayStaffList = staffList.slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -274,6 +329,9 @@ export const CalendarView: React.FC = () => {
                   Today
                 </span>
               )}
+              <span className="text-xs text-slate-500 font-medium">
+                • {appointments.length} Booked
+              </span>
             </div>
           </div>
         </div>
@@ -339,18 +397,27 @@ export const CalendarView: React.FC = () => {
 
       {/* Calendar Grid by Stylists */}
       <div className="glass-card p-5 overflow-x-auto">
-        <div className="min-w-[800px]">
-          {/* Header Row: Stylists */}
-          <div className="grid grid-cols-5 gap-3 pb-3 border-b border-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider">
-            <div className="col-span-1 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-brand-400" /> Time Slot
-            </div>
-            {staffList.slice(0, 4).map((staff) => (
+        <div className="min-w-[850px]">
+          {/* Header Row: Stylists + Unassigned (if any) */}
+          <div
+            className="grid gap-3 pb-3 border-b border-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider"
+            style={{
+              gridTemplateColumns: `130px repeat(${displayStaffList.length + (unassignedAppts.length > 0 ? 1 : 0)}, minmax(170px, 1fr))`,
+            }}
+          >
+            <div>Time Slot</div>
+            {displayStaffList.map((staff) => (
               <div key={staff._id} className="text-center font-bold text-slate-200">
                 {staff.displayName}
                 <div className="text-[10px] text-brand-400 font-normal">{staff.jobTitle}</div>
               </div>
             ))}
+            {unassignedAppts.length > 0 && (
+              <div className="text-center font-bold text-amber-300">
+                Unassigned / Queue
+                <div className="text-[10px] text-amber-400/80 font-normal">Pending Stylist</div>
+              </div>
+            )}
           </div>
 
           {/* Time Rows */}
@@ -359,7 +426,13 @@ export const CalendarView: React.FC = () => {
               const slotPassed = isSlotInPast(selectedDate, slot);
 
               return (
-                <div key={slot} className={`grid grid-cols-5 gap-3 py-3 items-center text-xs ${slotPassed ? 'opacity-60' : ''}`}>
+                <div
+                  key={slot}
+                  className={`grid gap-3 py-3 items-center text-xs ${slotPassed ? 'opacity-60' : ''}`}
+                  style={{
+                    gridTemplateColumns: `130px repeat(${displayStaffList.length + (unassignedAppts.length > 0 ? 1 : 0)}, minmax(170px, 1fr))`,
+                  }}
+                >
                   <div className="flex items-center gap-2">
                     <span className={`font-bold ${slotPassed ? 'text-slate-500' : 'text-slate-300'}`}>
                       {formatTime12h(slot)}
@@ -371,7 +444,8 @@ export const CalendarView: React.FC = () => {
                     )}
                   </div>
 
-                  {staffList.slice(0, 4).map((staff) => {
+                  {/* Stylist Columns */}
+                  {displayStaffList.map((staff) => {
                     const app = appointments.find((a) => {
                       if (a.status === 'CANCELLED') return false;
                       const staffMatch = (a.staffId?._id || a.staffId) === staff._id || a.staffName === staff.displayName;
@@ -434,11 +508,106 @@ export const CalendarView: React.FC = () => {
                       </div>
                     );
                   })}
+
+                  {/* Unassigned column if any unassigned exist */}
+                  {unassignedAppts.length > 0 && (() => {
+                    const unassignedSlotApp = unassignedAppts.find((a) => a.startTime?.startsWith(slot.split(':')[0]));
+                    if (unassignedSlotApp) {
+                      return (
+                        <div className="p-2.5 rounded-xl border border-amber-500/40 bg-amber-500/15 text-amber-200 min-h-[58px] flex flex-col justify-between">
+                          <div>
+                            <div className="font-bold text-[11px] text-white line-clamp-1">{unassignedSlotApp.customerName}</div>
+                            <div className="text-[10px] text-amber-300 line-clamp-1">{unassignedSlotApp.serviceName}</div>
+                          </div>
+                          <div className="text-[9px] text-amber-400">Any Available Stylist</div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="p-2.5 rounded-xl border border-slate-900 bg-slate-950/20 text-slate-700 min-h-[58px] flex items-center justify-center text-[10px]">
+                        -
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}
           </div>
         </div>
+      </div>
+
+      {/* Daily Scheduled Appointments Ledger & Details Table */}
+      <div className="glass-card p-5">
+        <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-brand-400" />
+            <h3 className="text-sm font-bold text-white">
+              Scheduled Appointments for {selectedDate} ({appointments.length})
+            </h3>
+          </div>
+          <span className="text-xs text-slate-400">
+            {appointments.filter((a) => a.status === 'SCHEDULED' || a.status === 'CONFIRMED').length} upcoming
+          </span>
+        </div>
+
+        {appointments.length === 0 ? (
+          <div className="text-center py-8 text-slate-500 text-xs">
+            No appointments scheduled for {selectedDate}. Click "Book Appointment" or an available slot above to schedule.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="text-[11px] text-slate-400 border-b border-slate-800 uppercase tracking-wider">
+                <tr>
+                  <th className="pb-2.5 font-bold">Time Slot</th>
+                  <th className="pb-2.5 font-bold">Client / Phone</th>
+                  <th className="pb-2.5 font-bold">Service</th>
+                  <th className="pb-2.5 font-bold">Assigned Stylist</th>
+                  <th className="pb-2.5 font-bold">Status</th>
+                  <th className="pb-2.5 font-bold text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {appointments.map((a) => (
+                  <tr key={a._id || a.id} className="hover:bg-slate-900/40 transition-colors">
+                    <td className="py-3 font-bold text-white flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-brand-400" />
+                      {a.startTime} {a.endTime ? `- ${a.endTime}` : ''}
+                    </td>
+                    <td className="py-3">
+                      <div className="font-semibold text-white">{a.customerName || a.customerId?.fullName || 'Client'}</div>
+                      <div className="text-[11px] text-slate-400 flex items-center gap-1">
+                        <Phone className="w-3 h-3 text-slate-500" /> {a.customerPhone || a.customerId?.phone || 'No phone'}
+                      </div>
+                    </td>
+                    <td className="py-3">
+                      <div className="text-slate-200 font-medium">{a.serviceName || a.serviceId?.name}</div>
+                      <div className="text-[10px] text-slate-400">{a.durationMinutes || 60} mins</div>
+                    </td>
+                    <td className="py-3">
+                      <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-900 border border-slate-800 text-brand-300 font-medium">
+                        <User className="w-3 h-3 text-brand-400" />
+                        {a.staffName || a.staffId?.displayName || 'Any Available Stylist'}
+                      </div>
+                    </td>
+                    <td className="py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        a.status === 'IN_SERVICE' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30' :
+                        a.status === 'COMPLETED' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' :
+                        'bg-brand-500/15 text-brand-300 border border-brand-500/30'
+                      }`}>
+                        {a.status || 'SCHEDULED'}
+                      </span>
+                    </td>
+                    <td className="py-3 text-right font-bold text-white">
+                      ₹{a.totalPrice || a.serviceId?.basePrice || 0}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Booking Modal */}
@@ -532,7 +701,7 @@ export const CalendarView: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, staffId: e.target.value })}
                     className="input-field"
                   >
-                    <option value="">Any Available Stylist</option>
+                    <option value="">✨ Any Available Stylist (Auto-Assign)</option>
                     {staffList.map((st) => (
                       <option key={st._id || st.id} value={st._id || st.id}>
                         {st.displayName}

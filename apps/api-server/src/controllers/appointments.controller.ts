@@ -140,11 +140,12 @@ export const createAppointment = asyncHandler(async (req: AuthRequest, res: Resp
     return;
   }
 
-  // 3. Prevent Double Booking for Stylist
-  if (staff) {
+  // 3. Stylist Resolution & Conflict Check (Specific Stylist vs Auto-Assign Any Available)
+  let assignedStaff = staff;
+  if (assignedStaff) {
     const existingStaffAppts = await Appointment.find({
       organizationId: req.organizationId,
-      staffId: staff._id,
+      staffId: assignedStaff._id,
       appointmentDate: { $gte: startOfDay, $lt: endOfDay },
       status: { $nin: ['CANCELLED', 'NO_SHOW'] },
     });
@@ -160,9 +161,37 @@ export const createAppointment = asyncHandler(async (req: AuthRequest, res: Resp
     if (hasStaffConflict) {
       res.status(400).json({
         success: false,
-        message: `Stylist ${staff.displayName} is already booked at this time. Please select another time or stylist.`,
+        message: `Stylist ${assignedStaff.displayName} is already booked at this time. Please select another time or stylist.`,
       });
       return;
+    }
+  } else {
+    // "Any Available Stylist" - auto-find first free active staff member
+    const allStaff = await StaffProfile.find({
+      organizationId: req.organizationId,
+      isActive: true,
+    });
+
+    for (const st of allStaff) {
+      const existingStaffAppts = await Appointment.find({
+        organizationId: req.organizationId,
+        staffId: st._id,
+        appointmentDate: { $gte: startOfDay, $lt: endOfDay },
+        status: { $nin: ['CANCELLED', 'NO_SHOW'] },
+      });
+
+      const hasConflict = existingStaffAppts.some((a) => {
+        const [aH, aM] = (a.startTime || '00:00').split(':').map(Number);
+        const aStart = aH * 60 + (aM || 0);
+        const [eH, eM] = (a.endTime || '00:00').split(':').map(Number);
+        const aEnd = eH * 60 + (eM || 0);
+        return (startTotalMinutes < aEnd && endTotalMinutes > aStart);
+      });
+
+      if (!hasConflict) {
+        assignedStaff = st;
+        break;
+      }
     }
   }
 

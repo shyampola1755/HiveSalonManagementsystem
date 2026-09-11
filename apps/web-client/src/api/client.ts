@@ -532,15 +532,19 @@ apiClient.interceptors.response.use(
           };
         }
 
-        // 3. Stylist Overlap Check
-        if (staffId) {
+        // 3. Stylist Overlap & Auto-Assignment for "Any Available Stylist"
+        const staff = getStorageList('staff', INITIAL_STAFF);
+        let finalStaffId = staffId;
+        let foundStaff = staff.find((s: any) => s._id === staffId || s.id === staffId);
+
+        if (finalStaffId) {
           const staffConflict = appts.find((a: any) => {
             if (a.status === 'CANCELLED' || a.status === 'NO_SHOW') return false;
             const aDate = a.appointmentDate ? (typeof a.appointmentDate === 'string' ? a.appointmentDate.split('T')[0] : '') : todayStr;
             if (aDate && aDate !== targetDate) return false;
 
             const aStaffId = a.staffId?._id || a.staffId?.id || a.staffId;
-            if (aStaffId !== staffId) return false;
+            if (aStaffId !== finalStaffId && a.staffName !== foundStaff?.displayName) return false;
 
             const [aH, aM] = (a.startTime || '00:00').split(':').map(Number);
             const aStart = aH * 60 + (aM || 0);
@@ -558,7 +562,43 @@ apiClient.interceptors.response.use(
               status: 400,
               data: {
                 success: false,
-                message: `Selected stylist is already booked at ${staffConflict.startTime}. Please select another time or stylist.`,
+                message: `Stylist ${foundStaff?.displayName || 'Stylist'} is already booked at ${staffConflict.startTime}. Please select another time or stylist.`,
+              },
+            };
+          }
+        } else {
+          // "Any Available Stylist" - automatically find and assign the first free stylist
+          const freeStaff = staff.find((st: any) => {
+            const conflict = appts.find((a: any) => {
+              if (a.status === 'CANCELLED' || a.status === 'NO_SHOW') return false;
+              const aDate = a.appointmentDate ? (typeof a.appointmentDate === 'string' ? a.appointmentDate.split('T')[0] : '') : todayStr;
+              if (aDate && aDate !== targetDate) return false;
+
+              const aStaffId = a.staffId?._id || a.staffId?.id || a.staffId;
+              if (aStaffId !== st._id && aStaffId !== st.id && a.staffName !== st.displayName) return false;
+
+              const [aH, aM] = (a.startTime || '00:00').split(':').map(Number);
+              const aStart = aH * 60 + (aM || 0);
+              let aEnd = aStart + (Number(a.durationMinutes) || 60);
+              if (a.endTime) {
+                const [aeH, aeM] = a.endTime.split(':').map(Number);
+                aEnd = aeH * 60 + (aeM || 0);
+              }
+
+              return (startTotalMinutes < aEnd && endTotalMinutes > aStart);
+            });
+            return !conflict;
+          });
+
+          if (freeStaff) {
+            foundStaff = freeStaff;
+            finalStaffId = freeStaff._id || freeStaff.id;
+          } else if (staff.length > 0) {
+            return {
+              status: 400,
+              data: {
+                success: false,
+                message: 'All stylists are fully booked for this time slot. Please choose another time slot.',
               },
             };
           }
@@ -567,11 +607,9 @@ apiClient.interceptors.response.use(
         // Resolve relations
         const customers = getStorageList('customers', INITIAL_CUSTOMERS);
         const services = getStorageList('services', INITIAL_SERVICES);
-        const staff = getStorageList('staff', INITIAL_STAFF);
 
         const foundCust = customers.find((c: any) => c._id === customerId || c.id === customerId);
         const foundSvc = services.find((s: any) => s._id === serviceId || s.id === serviceId);
-        const foundStaff = staff.find((s: any) => s._id === staffId || s.id === staffId);
 
         const newAppt = {
           _id: `app_${Date.now()}`,
@@ -581,7 +619,7 @@ apiClient.interceptors.response.use(
           customerPhone: foundCust?.phone || '',
           serviceId: foundSvc ? { _id: foundSvc._id, name: foundSvc.name, basePrice: foundSvc.basePrice } : serviceId,
           serviceName: foundSvc?.name || 'Hair & Beauty Service',
-          staffId: foundStaff ? { _id: foundStaff._id, displayName: foundStaff.displayName, jobTitle: foundStaff.jobTitle } : staffId,
+          staffId: foundStaff ? { _id: foundStaff._id, displayName: foundStaff.displayName, jobTitle: foundStaff.jobTitle } : finalStaffId,
           staffName: foundStaff?.displayName || 'Stylist',
           appointmentDate: targetDate,
           startTime,
