@@ -40,7 +40,13 @@ export const CustomersView: React.FC = () => {
   const fetchCustomers = async () => {
     try {
       const res = await apiClient.get(`/customers?search=${encodeURIComponent(search)}`);
-      if (res.data.success) {
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setCustomers(res.data.data);
+      } else if (Array.isArray(res.data)) {
+        setCustomers(res.data);
+      } else if (res.data?.data?.success && Array.isArray(res.data.data.data)) {
+        setCustomers(res.data.data.data);
+      } else if (res.data?.data && Array.isArray(res.data.data)) {
         setCustomers(res.data.data);
       }
     } catch (e) {
