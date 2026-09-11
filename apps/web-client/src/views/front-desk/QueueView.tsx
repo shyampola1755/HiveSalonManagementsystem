@@ -9,7 +9,11 @@ export const QueueView: React.FC = () => {
   const { activeBranchId } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
-  const [queue, setQueue] = useState<any[]>([]);
+  const [queue, setQueue] = useState<any[]>([
+    { _id: 'app-1', customerName: 'Aarav Singhania', customerPhone: '+91 98765 43210', serviceName: 'French Balayage & Glossing', staffName: 'Vikram Mehta', startTime: '10:00', endTime: '12:00', status: 'IN_SERVICE', totalPrice: 6500 },
+    { _id: 'app-2', customerName: 'Deepika Padukone', customerPhone: '+91 98222 11334', serviceName: 'HydraFacial MD Platinum', staffName: 'Sara Khan', startTime: '12:30', endTime: '13:30', status: 'CHECKED_IN', totalPrice: 5500 },
+    { _id: 'app-3', customerName: 'Rohan Mehra', customerPhone: '+91 91234 56789', serviceName: 'Precision Director Haircut', staffName: 'Rahul Verma', startTime: '14:00', endTime: '14:45', status: 'SCHEDULED', totalPrice: 1500 },
+  ]);
 
   const fetchQueue = async () => {
     try {

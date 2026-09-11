@@ -46,14 +46,29 @@ export const PosView: React.FC = () => {
 
   const [attachedAppointmentId, setAttachedAppointmentId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'SERVICES' | 'PRODUCTS'>('SERVICES');
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([
+    { _id: 'sc-1', name: 'Hair Services' },
+    { _id: 'sc-2', name: 'Color & Highlights' },
+    { _id: 'sc-3', name: 'Skin & Facial Therapy' },
+    { _id: 'sc-4', name: 'Nails & Hands' },
+  ]);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-  const [catalogItems, setCatalogItems] = useState<any[]>([]);
+  const [catalogItems, setCatalogItems] = useState<any[]>([
+    { _id: 's-1', categoryId: 'sc-1', name: 'Precision Director Haircut', durationMinutes: 45, basePrice: 1500, effectivePrice: 1500, taxRate: 18 },
+    { _id: 's-2', categoryId: 'sc-2', name: 'French Balayage & Glossing', durationMinutes: 120, basePrice: 6500, effectivePrice: 6500, taxRate: 18 },
+    { _id: 's-3', categoryId: 'sc-1', name: 'Kérastase Chronologiste Luxury Ritual', durationMinutes: 60, basePrice: 3500, effectivePrice: 3500, taxRate: 18 },
+    { _id: 's-4', categoryId: 'sc-3', name: 'HydraFacial MD Platinum Rejuvenation', durationMinutes: 60, basePrice: 5500, effectivePrice: 5500, taxRate: 18 },
+    { _id: 's-5', categoryId: 'sc-4', name: 'Russian Gel Manicure & Nail Art', durationMinutes: 50, basePrice: 2000, effectivePrice: 2000, taxRate: 18 },
+  ]);
   const [searchQuery, setSearchQuery] = useState('');
   const [customersList, setCustomersList] = useState<any[]>([]);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
-  const [staffList, setStaffList] = useState<any[]>([]);
+  const [staffList, setStaffList] = useState<any[]>([
+    { _id: 'st-1', displayName: 'Vikram Mehta', jobTitle: 'Senior Creative Hair Stylist' },
+    { _id: 'st-2', displayName: 'Sara Khan', jobTitle: 'Master Aesthetician' },
+    { _id: 'st-3', displayName: 'Rahul Verma', jobTitle: 'Creative Color Director' },
+  ]);
 
   // Pre-load customer & service if navigated from Queue or Dashboard appointment
   useEffect(() => {
