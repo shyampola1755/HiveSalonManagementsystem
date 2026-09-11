@@ -16,6 +16,8 @@ async function verifyLiveVercel() {
   });
 
   const page = await browser.newPage();
+  page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+  page.on('pageerror', err => console.log('PAGE ERROR:', err.toString()));
 
   // 1. Login as Front Desk
   await page.goto(`${TARGET_URL}/login`, { waitUntil: 'networkidle0' });
@@ -42,6 +44,17 @@ async function verifyLiveVercel() {
   console.log('Verifying POS Register on Vercel...');
   await page.goto(`${TARGET_URL}/front-desk/pos`, { waitUntil: 'networkidle0' });
   await new Promise(r => setTimeout(r, 1500));
+
+  const debugPos = await page.evaluate(async () => {
+    try {
+      const cats = localStorage.getItem('hive_db_categories') || localStorage.getItem('hive_active_branch');
+      return { storage: cats };
+    } catch (e) {
+      return { error: e.message };
+    }
+  });
+  console.log('POS Debug Data:', debugPos);
+
   await page.screenshot({ path: path.join(ARTIFACT_DIR, 'vercel_live_02_pos.png') });
   console.log('📸 Captured vercel_live_02_pos.png');
 

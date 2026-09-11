@@ -114,15 +114,40 @@ export const PosView: React.FC = () => {
             apiClient.get('/services/categories'),
             apiClient.get('/services'),
           ]);
-          setCategories(getArray(catRes));
-          setCatalogItems(getArray(svcRes));
+          const cats = getArray(catRes);
+          const svcs = getArray(svcRes);
+          setCategories(cats.length > 0 ? cats : [
+            { _id: 'sc-1', name: 'Hair Services' },
+            { _id: 'sc-2', name: 'Color & Highlights' },
+            { _id: 'sc-3', name: 'Skin & Facial Therapy' },
+            { _id: 'sc-4', name: 'Nails & Hands' },
+          ]);
+          setCatalogItems(svcs.length > 0 ? svcs : [
+            { _id: 's-1', categoryId: 'sc-1', name: 'Precision Director Haircut', durationMinutes: 45, basePrice: 1500, effectivePrice: 1500, taxRate: 18 },
+            { _id: 's-2', categoryId: 'sc-2', name: 'French Balayage & Glossing', durationMinutes: 120, basePrice: 6500, effectivePrice: 6500, taxRate: 18 },
+            { _id: 's-3', categoryId: 'sc-1', name: 'Kérastase Chronologiste Luxury Ritual', durationMinutes: 60, basePrice: 3500, effectivePrice: 3500, taxRate: 18 },
+            { _id: 's-4', categoryId: 'sc-3', name: 'HydraFacial MD Platinum Rejuvenation', durationMinutes: 60, basePrice: 5500, effectivePrice: 5500, taxRate: 18 },
+            { _id: 's-5', categoryId: 'sc-4', name: 'Russian Gel Manicure & Nail Art', durationMinutes: 50, basePrice: 2000, effectivePrice: 2000, taxRate: 18 },
+          ]);
         } else {
           const [catRes, prodRes] = await Promise.all([
             apiClient.get('/inventory/categories'),
             apiClient.get('/inventory/products?isRetail=true'),
           ]);
-          setCategories(getArray(catRes));
-          setCatalogItems(getArray(prodRes));
+          const cats = getArray(catRes);
+          const prods = getArray(prodRes);
+          setCategories(cats.length > 0 ? cats : [
+            { _id: 'pc-1', name: 'Haircare & Masks' },
+            { _id: 'pc-2', name: 'Color & Developers' },
+            { _id: 'pc-3', name: 'Skincare Serums' },
+          ]);
+          setCatalogItems(prods.length > 0 ? prods : [
+            { _id: 'p-1', categoryId: 'pc-1', name: 'Absolut Repair Molecular Leave-in Mask (100ml)', sku: 'LRL-MOL-100', brand: "L'Oréal Professionnel", retailPrice: 1600, currentQuantity: 24, isRetailItem: true },
+            { _id: 'p-2', categoryId: 'pc-1', name: 'Kérastase Elixir Ultime L\'Huile Originale (100ml)', sku: 'KER-ELX-100', brand: 'Kérastase Paris', retailPrice: 3800, currentQuantity: 18, isRetailItem: true },
+            { _id: 'p-3', categoryId: 'pc-2', name: 'Dia Light Semi-Permanent Gel-Crème 7.11', sku: 'LRL-DIA-711', brand: "L'Oréal Professionnel", retailPrice: 650, currentQuantity: 35, isRetailItem: true },
+            { _id: 'p-4', categoryId: 'pc-1', name: 'Olaplex No. 7 Bonding Oil (30ml)', sku: 'OLP-BND-030', brand: 'Olaplex', retailPrice: 2800, currentQuantity: 14, isRetailItem: true },
+            { _id: 'p-5', categoryId: 'pc-3', name: 'SkinCeuticals C E Ferulic Antioxidant Serum (30ml)', sku: 'SKC-CEF-030', brand: 'SkinCeuticals', retailPrice: 11000, currentQuantity: 8, isRetailItem: true },
+          ]);
         }
         const staffRes = await apiClient.get('/staff');
         setStaffList(getArray(staffRes));

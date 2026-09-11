@@ -5,8 +5,10 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 4000,
+  timeout: 2500,
 });
+
+let isMockModeActive = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app') && !import.meta.env.VITE_API_URL;
 
 export const DEMO_PROFILES: Record<string, any> = {
   'admin@hivesalon.com': {
