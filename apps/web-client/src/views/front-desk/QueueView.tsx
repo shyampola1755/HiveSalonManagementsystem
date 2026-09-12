@@ -13,7 +13,8 @@ export const QueueView: React.FC = () => {
 
   const fetchQueue = async () => {
     try {
-      const res = await apiClient.get('/appointments/queue');
+      const bParam = activeBranchId ? `?branchId=${encodeURIComponent(activeBranchId)}` : '';
+      const res = await apiClient.get(`/appointments/queue${bParam}`);
       const getArray = (r: any) => {
         if (!r) return [];
         if (Array.isArray(r.data?.data)) return r.data.data;

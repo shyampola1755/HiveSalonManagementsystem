@@ -198,20 +198,22 @@ const INITIAL_STAFF = [
 ];
 
 const INITIAL_APPOINTMENTS = [
-  { _id: 'app-1', customerName: 'Aarav Singhania', customerPhone: '+91 98765 43210', serviceName: 'French Balayage & Glossing', staffName: 'Vikram Mehta', appointmentDate: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '12:00', status: 'IN_SERVICE', totalPrice: 6500 },
-  { _id: 'app-2', customerName: 'Deepika Padukone', customerPhone: '+91 98222 11334', serviceName: 'HydraFacial MD Platinum', staffName: 'Sara Khan', appointmentDate: new Date().toISOString().split('T')[0], startTime: '12:30', endTime: '13:30', status: 'CHECKED_IN', totalPrice: 5500 },
-  { _id: 'app-3', customerName: 'Rohan Mehra', customerPhone: '+91 91234 56789', serviceName: 'Precision Director Haircut', staffName: 'Rahul Verma', appointmentDate: new Date().toISOString().split('T')[0], startTime: '14:00', endTime: '14:45', status: 'SCHEDULED', totalPrice: 1500 },
+  { _id: 'app-1', branchId: 'hyd-01', customerName: 'Aarav Singhania', customerPhone: '+91 98765 43210', serviceName: 'French Balayage & Glossing', staffName: 'Vikram Mehta', appointmentDate: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '12:00', status: 'IN_SERVICE', totalPrice: 6500 },
+  { _id: 'app-2', branchId: 'mum-01', customerName: 'Deepika Padukone', customerPhone: '+91 98222 11334', serviceName: 'HydraFacial MD Platinum', staffName: 'Sara Khan', appointmentDate: new Date().toISOString().split('T')[0], startTime: '12:30', endTime: '13:30', status: 'CHECKED_IN', totalPrice: 5500 },
+  { _id: 'app-3', branchId: 'blr-01', customerName: 'Rohan Mehra', customerPhone: '+91 91234 56789', serviceName: 'Precision Director Haircut', staffName: 'Rahul Verma', appointmentDate: new Date().toISOString().split('T')[0], startTime: '14:00', endTime: '14:45', status: 'SCHEDULED', totalPrice: 1500 },
 ];
 
 const INITIAL_ORDERS = [
-  { _id: 'ord-1', orderNumber: 'ORD-HYD-01-768139', branchName: 'Hyderabad Flagship (Banjara Hills)', requestedByUserName: 'Priya Sharma (Branch Manager)', status: 'RECEIVED', createdAt: new Date().toISOString(), items: [{ productName: 'Absolut Repair Molecular Leave-in Mask (100ml)', requestedQuantity: 15, receivedQuantity: 15 }] },
-  { _id: 'ord-2', orderNumber: 'ORD-MUM-01-923145', branchName: 'Mumbai Salon & Spa (Bandra West)', requestedByUserName: 'Rohan Joshi', status: 'DISPATCHED', createdAt: new Date().toISOString(), items: [{ productName: 'Kérastase Elixir Ultime L\'Huile Originale (100ml)', requestedQuantity: 10, dispatchedQuantity: 10 }] },
+  { _id: 'ord-1', branchId: 'hyd-01', orderNumber: 'ORD-HYD-01-768139', branchName: 'Hyderabad Flagship (Banjara Hills)', requestedByUserName: 'Priya Sharma (Branch Manager)', status: 'RECEIVED', createdAt: new Date().toISOString(), items: [{ productName: 'Absolut Repair Molecular Leave-in Mask (100ml)', requestedQuantity: 15, receivedQuantity: 15 }] },
+  { _id: 'ord-2', branchId: 'mum-01', orderNumber: 'ORD-MUM-01-923145', branchName: 'Mumbai Salon & Spa (Bandra West)', requestedByUserName: 'Rohan Joshi', status: 'DISPATCHED', createdAt: new Date().toISOString(), items: [{ productName: 'Kérastase Elixir Ultime L\'Huile Originale (100ml)', requestedQuantity: 10, dispatchedQuantity: 10 }] },
 ];
 
 const INITIAL_INVOICES = [
   {
     _id: 'inv-1',
     id: 'inv-1',
+    branchId: 'hyd-01',
+    branchName: 'Hyderabad Flagship (Banjara Hills)',
     invoiceNumber: 'INV-HYD-01-893120',
     customerName: 'Aarav Singhania',
     customerPhone: '+91 98765 43210',
@@ -227,7 +229,9 @@ const INITIAL_INVOICES = [
   {
     _id: 'inv-2',
     id: 'inv-2',
-    invoiceNumber: 'INV-HYD-01-893121',
+    branchId: 'mum-01',
+    branchName: 'Mumbai Salon & Spa (Bandra West)',
+    invoiceNumber: 'INV-MUM-01-893121',
     customerName: 'Deepika Padukone',
     customerPhone: '+91 98222 11334',
     totalAmount: 5500,
@@ -242,7 +246,9 @@ const INITIAL_INVOICES = [
   {
     _id: 'inv-3',
     id: 'inv-3',
-    invoiceNumber: 'INV-HYD-01-893122',
+    branchId: 'blr-01',
+    branchName: 'Bangalore Lounge (Indiranagar)',
+    invoiceNumber: 'INV-BLR-01-893122',
     customerName: 'Rohan Mehra',
     customerPhone: '+91 91234 56789',
     totalAmount: 1500,
@@ -323,8 +329,25 @@ const handleMockFallback = async (config: any): Promise<any> => {
 
   const url = config.url || '';
   const method = (config.method || 'get').toLowerCase();
+  const urlParams = new URLSearchParams(url.includes('?') ? url.split('?')[1] : '');
+  const activeBranchFromStorage = typeof localStorage !== 'undefined' ? localStorage.getItem('hive_active_branch') : 'hyd-01';
+  const targetBranch = urlParams.get('branchId') || config.headers?.['x-branch-id'] || activeBranchFromStorage || 'hyd-01';
 
-  console.warn(`[API Fallback] Request to ${url} handled by reactive local mock DB.`);
+  const matchBranch = (itemBranch: any, target: string | null | undefined): boolean => {
+    if (!target || target === 'ALL') return true;
+    const t = String(target).toLowerCase().trim();
+    if (!itemBranch) {
+      return t.includes('hyd') || t === 'hyd-01';
+    }
+    const i = String(itemBranch).toLowerCase().trim();
+    if (i === t) return true;
+    if (t.includes('hyd') && (i.includes('hyd') || i === 'hyd-01')) return true;
+    if (t.includes('mum') && (i.includes('mum') || i === 'mum-01')) return true;
+    if (t.includes('blr') && (i.includes('blr') || i === 'blr-01')) return true;
+    return false;
+  };
+
+  console.warn(`[API Fallback] Request to ${url} (branch: ${targetBranch}) handled by reactive local mock DB.`);
 
     // 1. Auth Endpoints
     if (url.includes('/auth/login')) {
@@ -540,6 +563,7 @@ const handleMockFallback = async (config: any): Promise<any> => {
       // GET /appointments/queue
       if (url.includes('/appointments/queue')) {
         const queue = appts.filter((a: any) =>
+          matchBranch(a.branchId, targetBranch) &&
           ['CHECKED_IN', 'IN_SERVICE', 'SCHEDULED', 'CONFIRMED'].includes(a.status)
         );
         return { status: 200, data: { success: true, count: queue.length, data: queue } };
@@ -683,9 +707,11 @@ const handleMockFallback = async (config: any): Promise<any> => {
         const foundCust = customers.find((c: any) => c._id === customerId || c.id === customerId);
         const foundSvc = services.find((s: any) => s._id === serviceId || s.id === serviceId);
 
+        const branchId = body.branchId || targetBranch || 'hyd-01';
         const newAppt = {
           _id: `app_${Date.now()}`,
           id: `app_${Date.now()}`,
+          branchId,
           customerId: foundCust ? { _id: foundCust._id, fullName: foundCust.fullName, phone: foundCust.phone } : customerId,
           customerName: foundCust?.fullName || 'Walk-in Client',
           customerPhone: foundCust?.phone || '',
@@ -717,19 +743,11 @@ const handleMockFallback = async (config: any): Promise<any> => {
         return { status: 200, data: { success: true, message: 'Appointment updated successfully' } };
       }
 
-      // GET /appointments/queue (Waiting Lounge & Active In-Service chairs)
-      if (url.includes('/appointments/queue')) {
-        const activeQueue = appts.filter((a: any) =>
-          ['CHECKED_IN', 'IN_SERVICE', 'SCHEDULED', 'CONFIRMED'].includes(a.status)
-        );
-        return { status: 200, data: { success: true, count: activeQueue.length, data: activeQueue } };
-      }
-
       // GET /appointments?date=...
       const dateParam = new URLSearchParams(url.split('?')[1] || '').get('date') || '';
-      let filtered = appts;
+      let filtered = appts.filter((a: any) => matchBranch(a.branchId, targetBranch));
       if (dateParam) {
-        filtered = appts.filter((a: any) => {
+        filtered = filtered.filter((a: any) => {
           if (!a.appointmentDate) return true;
           return a.appointmentDate === dateParam || a.appointmentDate.startsWith(dateParam);
         });
@@ -757,15 +775,16 @@ const handleMockFallback = async (config: any): Promise<any> => {
 
     // 9. Finance & Expenses
     if (url.includes('/finance/expenses')) {
-      const expenses = getStorageList('expenses', [{ _id: 'exp-1', category: 'Products & Supplies', amount: 4200, date: new Date().toISOString(), status: 'APPROVED' }]);
+      const expenses = getStorageList('expenses', [{ _id: 'exp-1', branchId: 'hyd-01', category: 'Products & Supplies', amount: 4200, date: new Date().toISOString(), status: 'APPROVED' }]);
       if (method === 'post') {
         const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
-        const newExp = { _id: `exp_${Date.now()}`, date: new Date().toISOString(), status: 'APPROVED', ...body };
+        const newExp = { _id: `exp_${Date.now()}`, branchId: body.branchId || targetBranch || 'hyd-01', date: new Date().toISOString(), status: 'APPROVED', ...body };
         const updated = [newExp, ...expenses];
         saveStorageList('expenses', updated);
         return { status: 200, data: { success: true, data: newExp, message: 'Expense logged' } };
       }
-      return { status: 200, data: { success: true, data: expenses } };
+      const branchExpenses = expenses.filter((exp: any) => matchBranch(exp.branchId, targetBranch));
+      return { status: 200, data: { success: true, data: branchExpenses } };
     }
 
     if (url.includes('/finance/campaigns')) {
@@ -786,32 +805,37 @@ const handleMockFallback = async (config: any): Promise<any> => {
       };
     }
 
-    // 11. Reports & Dashboard (Dynamic Reactive Metrics based on Invoices, Appts & CRM)
+    // 11. Reports & Dashboard (Dynamic Reactive Metrics per active Branch)
     if (url.includes('/reports/dashboard')) {
       const customers = getStorageList('customers', INITIAL_CUSTOMERS);
       const invoices = getStorageList('invoices', INITIAL_INVOICES);
       const appts = getStorageList('appointments', INITIAL_APPOINTMENTS);
-      const expenses = getStorageList('expenses', [{ _id: 'exp-1', category: 'Products & Supplies', amount: 4200, date: new Date().toISOString(), status: 'APPROVED' }]);
+      const expenses = getStorageList('expenses', [{ _id: 'exp-1', branchId: 'hyd-01', category: 'Products & Supplies', amount: 4200, date: new Date().toISOString(), status: 'APPROVED' }]);
 
       const d = new Date();
       const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-      // Calculate today's revenue dynamically from invoices
-      const todayInvoices = invoices.filter((inv: any) => !inv.createdAt || inv.createdAt.startsWith(todayStr) || inv.createdAt.split('T')[0] === todayStr);
-      const todayRevenue = todayInvoices.reduce((sum: number, inv: any) => sum + (Number(inv.totalAmount) || 0), 0);
-      const totalRevenue = invoices.reduce((sum: number, inv: any) => sum + (Number(inv.totalAmount) || 0), 0);
+      // Strictly isolate invoices, appointments, and expenses for the target branch
+      const branchInvoices = invoices.filter((inv: any) => matchBranch(inv.branchId, targetBranch));
+      const branchAppts = appts.filter((a: any) => matchBranch(a.branchId, targetBranch));
+      const branchExpenses = expenses.filter((exp: any) => matchBranch(exp.branchId, targetBranch));
 
-      const todayExpenses = expenses.filter((exp: any) => !exp.date || exp.date.startsWith(todayStr) || exp.date.split('T')[0] === todayStr);
+      // Calculate today's revenue dynamically from this branch's invoices
+      const todayInvoices = branchInvoices.filter((inv: any) => !inv.createdAt || inv.createdAt.startsWith(todayStr) || inv.createdAt.split('T')[0] === todayStr);
+      const todayRevenue = todayInvoices.reduce((sum: number, inv: any) => sum + (Number(inv.totalAmount) || 0), 0);
+      const totalRevenue = branchInvoices.reduce((sum: number, inv: any) => sum + (Number(inv.totalAmount) || 0), 0);
+
+      const todayExpenses = branchExpenses.filter((exp: any) => !exp.date || exp.date.startsWith(todayStr) || exp.date.split('T')[0] === todayStr);
       const todayExpenseTotal = todayExpenses.reduce((sum: number, exp: any) => sum + (Number(exp.amount) || 0), 0);
 
-      const todayAppts = appts.filter((a: any) => !a.appointmentDate || a.appointmentDate === todayStr || a.appointmentDate.startsWith(todayStr));
+      const todayAppts = branchAppts.filter((a: any) => !a.appointmentDate || a.appointmentDate === todayStr || a.appointmentDate.startsWith(todayStr));
 
       const appointmentBreakdown = {
-        total: todayAppts.length || appts.length,
-        scheduled: appts.filter((a: any) => ['SCHEDULED', 'CONFIRMED'].includes(a.status)).length,
-        checkedIn: appts.filter((a: any) => a.status === 'CHECKED_IN').length,
-        inService: appts.filter((a: any) => a.status === 'IN_SERVICE').length,
-        completed: appts.filter((a: any) => a.status === 'COMPLETED').length,
+        total: todayAppts.length || branchAppts.length,
+        scheduled: branchAppts.filter((a: any) => ['SCHEDULED', 'CONFIRMED'].includes(a.status)).length,
+        checkedIn: branchAppts.filter((a: any) => a.status === 'CHECKED_IN').length,
+        inService: branchAppts.filter((a: any) => a.status === 'IN_SERVICE').length,
+        completed: branchAppts.filter((a: any) => a.status === 'COMPLETED').length,
       };
 
       return {
@@ -824,7 +848,7 @@ const handleMockFallback = async (config: any): Promise<any> => {
               totalRevenue,
               todayExpenseTotal,
               netToday: todayRevenue - todayExpenseTotal,
-              todayAppointmentsCount: todayAppts.length || appts.length,
+              todayAppointmentsCount: todayAppts.length || branchAppts.length,
               totalCustomers: customers.length,
               activeBranches: 3,
               totalStaff: 12,
@@ -832,12 +856,12 @@ const handleMockFallback = async (config: any): Promise<any> => {
             },
             appointmentBreakdown,
             revenueTrend: [
-              { date: 'Mon', revenue: 18200 },
-              { date: 'Tue', revenue: 22400 },
-              { date: 'Wed', revenue: 19800 },
-              { date: 'Thu', revenue: 26500 },
-              { date: 'Fri', revenue: 31200 },
-              { date: 'Sat', revenue: 42000 },
+              { date: 'Mon', revenue: Math.round(todayRevenue * 0.7) || 4500 },
+              { date: 'Tue', revenue: Math.round(todayRevenue * 0.85) || 5200 },
+              { date: 'Wed', revenue: Math.round(todayRevenue * 0.9) || 4800 },
+              { date: 'Thu', revenue: Math.round(todayRevenue * 1.1) || 6200 },
+              { date: 'Fri', revenue: Math.round(todayRevenue * 1.25) || 7500 },
+              { date: 'Sat', revenue: Math.round(todayRevenue * 1.5) || 9000 },
               { date: 'Today', revenue: todayRevenue },
             ],
           },
@@ -845,23 +869,24 @@ const handleMockFallback = async (config: any): Promise<any> => {
       };
     }
 
-    // 12. POS Checkout & Invoices (Dynamic billing & transaction ledger)
+    // 12. POS Checkout & Invoices (Dynamic billing & isolated transaction ledger per branch)
     if (url.includes('/pos/checkout') || url.includes('/pos/invoices') || url.includes('/invoices')) {
       const invoices = getStorageList('invoices', INITIAL_INVOICES);
 
-      // GET /pos/invoices or GET /invoices
+      // GET /pos/invoices or GET /invoices (Filtered to current branch)
       if (method === 'get') {
+        const branchInvoices = invoices.filter((inv: any) => matchBranch(inv.branchId, targetBranch));
         return {
           status: 200,
           data: {
             success: true,
-            count: invoices.length,
-            data: invoices,
+            count: branchInvoices.length,
+            data: branchInvoices,
           },
         };
       }
 
-      // POST /pos/checkout (Create Invoice)
+      // POST /pos/checkout (Create Invoice tagged to current active branch)
       const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
       const customers = getStorageList('customers', INITIAL_CUSTOMERS);
       const foundCust = customers.find((c: any) => c._id === body.customerId || c.id === body.customerId || (body.customerName && c.fullName?.toLowerCase() === body.customerName?.toLowerCase()));
@@ -871,10 +896,16 @@ const handleMockFallback = async (config: any): Promise<any> => {
       const taxAmount = Number(body.taxAmount) || (totalAmount - subtotal);
       const discountAmount = Number(body.discountAmount) || 0;
 
-      const invNum = `INV-HYD-01-${Date.now().toString().slice(-6)}`;
+      const branchId = body.branchId || targetBranch || 'hyd-01';
+      const branchCode = String(branchId).toLowerCase().includes('mum') ? 'MUM-01' : String(branchId).toLowerCase().includes('blr') ? 'BLR-01' : 'HYD-01';
+      const branchName = branchCode === 'MUM-01' ? 'Mumbai Salon & Spa (Bandra West)' : branchCode === 'BLR-01' ? 'Bangalore Lounge (Indiranagar)' : 'Hyderabad Flagship (Banjara Hills)';
+
+      const invNum = `INV-${branchCode}-${Date.now().toString().slice(-6)}`;
       const newInvoice = {
         _id: `inv_${Date.now()}`,
         id: `inv_${Date.now()}`,
+        branchId,
+        branchName,
         invoiceNumber: invNum,
         customerId: body.customerId || foundCust?._id,
         customerName: body.customerName || foundCust?.fullName || 'Walk-in Client',

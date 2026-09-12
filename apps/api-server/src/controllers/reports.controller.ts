@@ -13,11 +13,29 @@ import { AuthRequest } from '../middleware/auth';
 // @desc    Get complete executive & operational dashboard analytics
 // @route   GET /api/v1/reports/dashboard
 export const getDashboardMetrics = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const targetBranch = req.query.branchId || req.activeBranchId;
+  const targetBranch = req.query.branchId || req.headers['x-branch-id'] || req.activeBranchId;
   const branchFilter: any = { organizationId: req.organizationId };
 
-  if (targetBranch && targetBranch !== 'undefined' && targetBranch !== 'null' && mongoose.Types.ObjectId.isValid(String(targetBranch))) {
-    branchFilter.branchId = targetBranch;
+  if (targetBranch && targetBranch !== 'undefined' && targetBranch !== 'null' && targetBranch !== 'ALL') {
+    let branchDoc = null;
+    if (mongoose.Types.ObjectId.isValid(String(targetBranch))) {
+      branchDoc = await Branch.findById(targetBranch);
+    }
+    if (!branchDoc) {
+      branchDoc = await Branch.findOne({
+        organizationId: req.organizationId,
+        $or: [
+          { code: new RegExp(`^${targetBranch}$`, 'i') },
+          { name: new RegExp(String(targetBranch).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') },
+        ],
+      });
+    }
+
+    if (branchDoc) {
+      branchFilter.branchId = branchDoc._id;
+    } else if (mongoose.Types.ObjectId.isValid(String(targetBranch))) {
+      branchFilter.branchId = targetBranch;
+    }
   }
 
   const today = new Date();

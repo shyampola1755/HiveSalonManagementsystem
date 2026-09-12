@@ -96,8 +96,9 @@ export const CalendarView: React.FC = () => {
 
   const fetchData = async () => {
     try {
+      const bParam = activeBranchId ? `&branchId=${encodeURIComponent(activeBranchId)}` : '';
       const [appRes, staffRes, svcRes, custRes] = await Promise.all([
-        apiClient.get(`/appointments?date=${selectedDate}`),
+        apiClient.get(`/appointments?date=${selectedDate}${bParam}`),
         apiClient.get('/staff'),
         apiClient.get('/services'),
         apiClient.get('/customers?limit=100'),
@@ -281,6 +282,7 @@ export const CalendarView: React.FC = () => {
     try {
       const res = await apiClient.post('/appointments', {
         ...formData,
+        branchId: activeBranchId,
         staffId: assignedStaffId,
         appointmentDate: selectedDate,
       });

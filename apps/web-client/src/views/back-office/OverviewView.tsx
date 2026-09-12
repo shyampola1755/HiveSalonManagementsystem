@@ -41,7 +41,8 @@ export const OverviewView: React.FC = () => {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const res = await apiClient.get('/reports/dashboard');
+        const bParam = activeBranchId ? `?branchId=${encodeURIComponent(activeBranchId)}` : '';
+        const res = await apiClient.get(`/reports/dashboard${bParam}`);
         if (res.data.success) {
           setData(res.data.data);
         }

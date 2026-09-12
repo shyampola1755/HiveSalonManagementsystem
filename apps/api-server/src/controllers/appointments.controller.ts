@@ -11,11 +11,28 @@ import { AuthRequest } from '../middleware/auth';
 // @route   GET /api/v1/appointments
 export const getAppointments = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { branchId, date, status } = req.query;
-  const targetBranch = branchId || req.activeBranchId;
+  const targetBranch = branchId || req.headers['x-branch-id'] || req.activeBranchId;
 
   const query: any = { organizationId: req.organizationId };
-  if (targetBranch && targetBranch !== 'undefined' && targetBranch !== 'null' && mongoose.Types.ObjectId.isValid(String(targetBranch))) {
-    query.branchId = targetBranch;
+  if (targetBranch && targetBranch !== 'undefined' && targetBranch !== 'null' && targetBranch !== 'ALL') {
+    let branchDoc = null;
+    if (mongoose.Types.ObjectId.isValid(String(targetBranch))) {
+      branchDoc = await Branch.findById(targetBranch);
+    }
+    if (!branchDoc) {
+      branchDoc = await Branch.findOne({
+        organizationId: req.organizationId,
+        $or: [
+          { code: new RegExp(`^${targetBranch}$`, 'i') },
+          { name: new RegExp(String(targetBranch).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') },
+        ],
+      });
+    }
+    if (branchDoc) {
+      query.branchId = branchDoc._id;
+    } else if (mongoose.Types.ObjectId.isValid(String(targetBranch))) {
+      query.branchId = targetBranch;
+    }
   }
   if (status) query.status = status;
 
@@ -38,7 +55,7 @@ export const getAppointments = asyncHandler(async (req: AuthRequest, res: Respon
 // @desc    Get live queue (Waiting Lounge & Checked-in / In-service clients)
 // @route   GET /api/v1/appointments/queue
 export const getLiveQueue = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const targetBranch = req.query.branchId || req.activeBranchId;
+  const targetBranch = req.query.branchId || req.headers['x-branch-id'] || req.activeBranchId;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -48,8 +65,25 @@ export const getLiveQueue = asyncHandler(async (req: AuthRequest, res: Response)
     status: { $in: ['CHECKED_IN', 'IN_SERVICE', 'SCHEDULED', 'CONFIRMED'] },
   };
 
-  if (targetBranch && targetBranch !== 'undefined' && targetBranch !== 'null' && mongoose.Types.ObjectId.isValid(String(targetBranch))) {
-    query.branchId = targetBranch;
+  if (targetBranch && targetBranch !== 'undefined' && targetBranch !== 'null' && targetBranch !== 'ALL') {
+    let branchDoc = null;
+    if (mongoose.Types.ObjectId.isValid(String(targetBranch))) {
+      branchDoc = await Branch.findById(targetBranch);
+    }
+    if (!branchDoc) {
+      branchDoc = await Branch.findOne({
+        organizationId: req.organizationId,
+        $or: [
+          { code: new RegExp(`^${targetBranch}$`, 'i') },
+          { name: new RegExp(String(targetBranch).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') },
+        ],
+      });
+    }
+    if (branchDoc) {
+      query.branchId = branchDoc._id;
+    } else if (mongoose.Types.ObjectId.isValid(String(targetBranch))) {
+      query.branchId = targetBranch;
+    }
   }
 
   const queue = await Appointment.find(query)

@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export const StylistView: React.FC = () => {
-  const { user } = useAuth();
+  const { user, activeBranchId } = useAuth();
   const [appointments, setAppointments] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'today' | 'formulas' | 'earnings'>('today');
   const [isLoading, setIsLoading] = useState(true);
@@ -25,7 +25,8 @@ export const StylistView: React.FC = () => {
   useEffect(() => {
     const fetchQueue = async () => {
       try {
-        const res = await apiClient.get('/appointments/queue');
+        const bParam = activeBranchId ? `?branchId=${encodeURIComponent(activeBranchId)}` : '';
+        const res = await apiClient.get(`/appointments/queue${bParam}`);
         if (res.data.success) {
           setAppointments(res.data.data);
         }
@@ -36,7 +37,7 @@ export const StylistView: React.FC = () => {
       }
     };
     fetchQueue();
-  }, []);
+  }, [activeBranchId]);
 
   // Filter appointments for the logged-in stylist or general queue
   const myAppointments = appointments;

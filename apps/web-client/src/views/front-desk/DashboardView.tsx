@@ -39,10 +39,12 @@ export const DashboardView: React.FC = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
+      const bParam = activeBranchId ? `?branchId=${encodeURIComponent(activeBranchId)}` : '';
+      const invParam = activeBranchId ? `?branchId=${encodeURIComponent(activeBranchId)}&limit=5` : '?limit=5';
       const [dashRes, appRes, invRes] = await Promise.all([
-        apiClient.get('/reports/dashboard'),
-        apiClient.get('/appointments/queue'),
-        apiClient.get('/pos/invoices?limit=5'),
+        apiClient.get(`/reports/dashboard${bParam}`),
+        apiClient.get(`/appointments/queue${bParam}`),
+        apiClient.get(`/pos/invoices${invParam}`),
       ]);
 
       const getArray = (r: any) => {

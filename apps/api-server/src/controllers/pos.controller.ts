@@ -12,9 +12,29 @@ import { AuthRequest } from '../middleware/auth';
 // @route   GET /api/v1/pos/invoices
 export const getInvoices = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { branchId, customerId, limit = 50 } = req.query;
+  const targetBranch = branchId || req.headers['x-branch-id'];
   const query: any = { organizationId: req.organizationId };
 
-  if (branchId) query.branchId = branchId;
+  if (targetBranch && targetBranch !== 'undefined' && targetBranch !== 'null' && targetBranch !== 'ALL') {
+    let branchDoc = null;
+    if (mongoose.Types.ObjectId.isValid(String(targetBranch))) {
+      branchDoc = await Branch.findById(targetBranch);
+    }
+    if (!branchDoc) {
+      branchDoc = await Branch.findOne({
+        organizationId: req.organizationId,
+        $or: [
+          { code: new RegExp(`^${targetBranch}$`, 'i') },
+          { name: new RegExp(String(targetBranch).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') },
+        ],
+      });
+    }
+    if (branchDoc) {
+      query.branchId = branchDoc._id;
+    } else if (mongoose.Types.ObjectId.isValid(String(targetBranch))) {
+      query.branchId = targetBranch;
+    }
+  }
   if (customerId) query.customerId = customerId;
 
   const invoices = await Invoice.find(query)
@@ -41,10 +61,19 @@ export const processCheckout = asyncHandler(async (req: AuthRequest, res: Respon
     notes,
   } = req.body;
 
-  const targetBranchId = branchId || req.activeBranchId;
+  const targetBranchId = branchId || req.activeBranchId || req.headers['x-branch-id'];
   let branch = null;
   if (targetBranchId && mongoose.Types.ObjectId.isValid(String(targetBranchId))) {
     branch = await Branch.findById(targetBranchId);
+  }
+  if (!branch && targetBranchId) {
+    branch = await Branch.findOne({
+      organizationId: req.organizationId,
+      $or: [
+        { code: new RegExp(`^${targetBranchId}$`, 'i') },
+        { name: new RegExp(String(targetBranchId).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') },
+      ],
+    });
   }
   if (!branch) {
     branch = await Branch.findOne({ organizationId: req.organizationId });

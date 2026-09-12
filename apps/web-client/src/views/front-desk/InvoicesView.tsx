@@ -11,7 +11,8 @@ export const InvoicesView: React.FC = () => {
   useEffect(() => {
     const fetchInvoices = async () => {
       try {
-        const res = await apiClient.get('/pos/invoices');
+        const bParam = activeBranchId ? `?branchId=${encodeURIComponent(activeBranchId)}` : '';
+        const res = await apiClient.get(`/pos/invoices${bParam}`);
         const getArray = (r: any) => {
           if (!r) return [];
           if (Array.isArray(r.data?.data)) return r.data.data;
