@@ -9,11 +9,7 @@ export const QueueView: React.FC = () => {
   const { activeBranchId } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
-  const [queue, setQueue] = useState<any[]>([
-    { _id: 'app-1', customerName: 'Aarav Singhania', customerPhone: '+91 98765 43210', serviceName: 'French Balayage & Glossing', staffName: 'Vikram Mehta', startTime: '10:00', endTime: '12:00', status: 'IN_SERVICE', totalPrice: 6500 },
-    { _id: 'app-2', customerName: 'Deepika Padukone', customerPhone: '+91 98222 11334', serviceName: 'HydraFacial MD Platinum', staffName: 'Sara Khan', startTime: '12:30', endTime: '13:30', status: 'CHECKED_IN', totalPrice: 5500 },
-    { _id: 'app-3', customerName: 'Rohan Mehra', customerPhone: '+91 91234 56789', serviceName: 'Precision Director Haircut', staffName: 'Rahul Verma', startTime: '14:00', endTime: '14:45', status: 'SCHEDULED', totalPrice: 1500 },
-  ]);
+  const [queue, setQueue] = useState<any[]>([]);
 
   const fetchQueue = async () => {
     try {
@@ -26,35 +22,35 @@ export const QueueView: React.FC = () => {
         return [];
       };
       const data = getArray(res);
-      setQueue(
-        data.length > 0
-          ? data
-          : [
-              { _id: 'app-1', customerName: 'Aarav Singhania', customerPhone: '+91 98765 43210', serviceName: 'French Balayage & Glossing', staffName: 'Vikram Mehta', startTime: '10:00', endTime: '12:00', status: 'IN_SERVICE', totalPrice: 6500 },
-              { _id: 'app-2', customerName: 'Deepika Padukone', customerPhone: '+91 98222 11334', serviceName: 'HydraFacial MD Platinum', staffName: 'Sara Khan', startTime: '12:30', endTime: '13:30', status: 'CHECKED_IN', totalPrice: 5500 },
-              { _id: 'app-3', customerName: 'Rohan Mehra', customerPhone: '+91 91234 56789', serviceName: 'Precision Director Haircut', staffName: 'Rahul Verma', startTime: '14:00', endTime: '14:45', status: 'SCHEDULED', totalPrice: 1500 },
-            ]
-      );
+      setQueue(data);
     } catch (e) {
-      console.error(e);
+      console.error('Error fetching queue:', e);
     }
   };
 
   useEffect(() => {
     fetchQueue();
-    const interval = setInterval(fetchQueue, 15000); // Polling queue every 15s
+    const interval = setInterval(fetchQueue, 10000); // Polling queue every 10s
     return () => clearInterval(interval);
   }, [activeBranchId]);
 
   const updateStatus = async (appId: string, status: string) => {
     try {
+      // Optimistically update queue immediately
+      setQueue((prevQueue) =>
+        status === 'COMPLETED' || status === 'CANCELLED'
+          ? prevQueue.filter((a) => (a._id !== appId && a.id !== appId))
+          : prevQueue.map((a) => (a._id === appId || a.id === appId ? { ...a, status } : a))
+      );
+
       const res = await apiClient.put(`/appointments/${appId}/status`, { status });
-      if (res.data.success) {
+      if (res.data?.success) {
         showToast(`Status updated to ${status.replace('_', ' ')}`, 'success');
-        fetchQueue();
       }
+      fetchQueue();
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to update status', 'error');
+      fetchQueue();
     }
   };
 
@@ -64,14 +60,14 @@ export const QueueView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between glass-card p-5">
+      <div className="flex items-center justify-between glass-card p-5 bg-white border-slate-200/80 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center">
             <UserCheck className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-white">Live Salon Floor & Waiting Lounge</h2>
-            <p className="text-xs text-slate-400">Manage client check-ins, chair assignments, and in-service progress</p>
+            <h2 className="text-lg font-extrabold text-slate-900">Live Salon Floor & Waiting Lounge</h2>
+            <p className="text-xs text-slate-500">Manage client check-ins, chair assignments, and in-service progress</p>
           </div>
         </div>
       </div>
@@ -79,32 +75,32 @@ export const QueueView: React.FC = () => {
       {/* Two Column Layout: Waiting Lounge vs In-Service Chairs */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Waiting Lounge Column */}
-        <div className="glass-card p-5">
-          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
-            <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse"></span>
+        <div className="glass-card p-5 bg-white border-slate-200/80">
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-200">
+            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-pulse"></span>
               Waiting Lounge ({loungeGuests.length})
             </h3>
           </div>
 
           <div className="space-y-3">
             {loungeGuests.length === 0 ? (
-              <div className="text-center py-10 text-slate-500 text-xs">No guests waiting in lounge</div>
+              <div className="text-center py-10 text-slate-400 text-xs">No guests waiting in lounge</div>
             ) : (
               loungeGuests.map((guest) => (
-                <div key={guest._id} className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between gap-3">
+                <div key={guest._id} className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between gap-3 shadow-sm">
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="font-bold text-sm text-white">{guest.customerName}</div>
-                      <div className="text-xs text-brand-300 font-medium">{guest.serviceName}</div>
-                      <div className="text-[11px] text-slate-400 mt-1">
+                      <div className="font-bold text-sm text-slate-900">{guest.customerName}</div>
+                      <div className="text-xs text-brand-700 font-semibold">{guest.serviceName}</div>
+                      <div className="text-[11px] text-slate-500 mt-1">
                         Scheduled: {guest.startTime} • Stylist: {guest.staffName || 'Any Available'}
                       </div>
                     </div>
                     <span className="badge-sky text-[10px]">{guest.status.replace('_', ' ')}</span>
                   </div>
 
-                  <div className="flex gap-2 pt-2 border-t border-slate-800/60">
+                  <div className="flex gap-2 pt-2 border-t border-slate-200">
                     <button
                       onClick={() => updateStatus(guest._id, 'IN_SERVICE')}
                       className="btn-gold flex-1 py-1.5 text-xs font-bold"
@@ -125,32 +121,32 @@ export const QueueView: React.FC = () => {
         </div>
 
         {/* In-Service Chairs Column */}
-        <div className="glass-card p-5">
-          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
-            <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <div className="glass-card p-5 bg-white border-slate-200/80">
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-200">
+            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
               In-Service Salon Chairs ({inServiceGuests.length})
             </h3>
           </div>
 
           <div className="space-y-3">
             {inServiceGuests.length === 0 ? (
-              <div className="text-center py-10 text-slate-500 text-xs">No clients currently in chairs</div>
+              <div className="text-center py-10 text-slate-400 text-xs">No clients currently in chairs</div>
             ) : (
               inServiceGuests.map((guest) => (
-                <div key={guest._id} className="p-4 rounded-xl bg-slate-950/70 border border-emerald-500/20 flex flex-col justify-between gap-3">
+                <div key={guest._id} className="p-4 rounded-xl bg-slate-50 border border-emerald-200 flex flex-col justify-between gap-3 shadow-sm">
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="font-bold text-sm text-white">{guest.customerName}</div>
-                      <div className="text-xs text-emerald-400 font-medium">{guest.serviceName}</div>
-                      <div className="text-[11px] text-slate-400 mt-1">
-                        Stylist: <span className="text-slate-200 font-semibold">{guest.staffName}</span>
+                      <div className="font-bold text-sm text-slate-900">{guest.customerName}</div>
+                      <div className="text-xs text-emerald-700 font-semibold">{guest.serviceName}</div>
+                      <div className="text-[11px] text-slate-500 mt-1">
+                        Stylist: <span className="text-slate-800 font-semibold">{guest.staffName}</span>
                       </div>
                     </div>
                     <span className="badge-emerald text-[10px]">In Progress</span>
                   </div>
 
-                  <div className="flex gap-2 pt-2 border-t border-slate-800/60">
+                  <div className="flex gap-2 pt-2 border-t border-slate-200">
                     <button
                       onClick={() => navigate('/front-desk/pos', { state: { appointment: guest } })}
                       className="btn-gold flex-1 py-1.5 text-xs font-bold"
@@ -159,7 +155,7 @@ export const QueueView: React.FC = () => {
                     </button>
                     <button
                       onClick={() => updateStatus(guest._id || guest.id, 'COMPLETED')}
-                      className="btn-secondary py-1.5 px-3 text-xs font-semibold hover:bg-emerald-600/30 hover:text-emerald-300"
+                      className="btn-secondary py-1.5 px-3 text-xs font-semibold hover:bg-emerald-50 hover:text-emerald-700"
                       title="Mark service as completed"
                     >
                       Done

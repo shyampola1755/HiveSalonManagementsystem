@@ -60,14 +60,14 @@ export const MembershipsView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between glass-card p-5">
+      <div className="flex items-center justify-between glass-card p-5 bg-white border-slate-200/80 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-brand-400 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-brand-600 border border-amber-200 flex items-center justify-center">
             <Gift className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-white">VIP Memberships & Service Packages</h2>
-            <p className="text-xs text-slate-400">Exclusive privilege tiers, recurring perks, and multi-session service passes</p>
+            <h2 className="text-lg font-extrabold text-slate-900">VIP Memberships & Service Packages</h2>
+            <p className="text-xs text-slate-500">Exclusive privilege tiers, recurring perks, and multi-session service passes</p>
           </div>
         </div>
       </div>
@@ -75,24 +75,24 @@ export const MembershipsView: React.FC = () => {
       {/* Membership Tiers Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {tiers.map((tier) => (
-          <div key={tier._id} className="glass-card p-6 border-slate-800 flex flex-col justify-between relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-2xl pointer-events-none"></div>
+          <div key={tier._id} className="glass-card p-6 bg-white border-slate-200/80 flex flex-col justify-between relative overflow-hidden shadow-sm">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl pointer-events-none"></div>
             <div>
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="text-base font-extrabold text-white">{tier.name}</h3>
-                  <div className="text-xs text-brand-400 font-semibold mt-0.5">{tier.validityDays} Days Validity</div>
+                  <h3 className="text-base font-extrabold text-slate-900">{tier.name}</h3>
+                  <div className="text-xs text-brand-700 font-bold mt-0.5">{tier.validityDays} Days Validity</div>
                 </div>
-                <div className="text-2xl font-black text-white">₹{tier.price?.toLocaleString('en-IN')}</div>
+                <div className="text-2xl font-black text-slate-900">₹{tier.price?.toLocaleString('en-IN')}</div>
               </div>
 
-              <div className="mt-4 space-y-2 border-t border-slate-800 pt-4 text-xs text-slate-300">
-                <div className="flex items-center gap-2 text-emerald-400 font-semibold">
+              <div className="mt-4 space-y-2 border-t border-slate-200 pt-4 text-xs text-slate-600">
+                <div className="flex items-center gap-2 text-emerald-700 font-semibold">
                   <CheckCircle2 className="w-4 h-4" /> {tier.discountPercentage}% Discount on all services
                 </div>
                 {tier.perks?.map((perk: string, idx: number) => (
-                  <div key={idx} className="flex items-center gap-2 text-slate-300">
-                    <Sparkles className="w-3.5 h-3.5 text-brand-400 shrink-0" /> {perk}
+                  <div key={idx} className="flex items-center gap-2 text-slate-700">
+                    <Sparkles className="w-3.5 h-3.5 text-brand-600 shrink-0" /> {perk}
                   </div>
                 ))}
               </div>
@@ -103,7 +103,7 @@ export const MembershipsView: React.FC = () => {
                 setSelectedTier(tier);
                 setShowSellModal(true);
               }}
-              className="btn-gold w-full mt-6 py-2.5 text-xs font-bold"
+              className="btn-gold w-full mt-6 py-2.5 text-xs font-bold shadow-sm"
             >
               Sell Membership to Client
             </button>
@@ -113,18 +113,18 @@ export const MembershipsView: React.FC = () => {
 
       {/* Sell Modal */}
       {showSellModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full glass-card p-6 border-slate-800">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-              <h3 className="text-sm font-bold text-white">Enroll in {selectedTier?.name}</h3>
-              <button onClick={() => setShowSellModal(false)} className="text-slate-400 hover:text-white">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-md w-full glass-card p-6 bg-white border-slate-200 shadow-xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+              <h3 className="text-sm font-bold text-slate-900">Enroll in {selectedTier?.name}</h3>
+              <button onClick={() => setShowSellModal(false)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleSubscribe} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Select Client</label>
+                <label className="block text-slate-700 font-semibold mb-1">Select Client</label>
                 <select
                   required
                   value={selectedCustomer}
@@ -140,12 +140,12 @@ export const MembershipsView: React.FC = () => {
                 </select>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex justify-between font-bold">
-                <span className="text-slate-400">Plan Fee:</span>
-                <span className="text-brand-400 text-sm">₹{selectedTier?.price}</span>
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex justify-between font-bold">
+                <span className="text-slate-500">Plan Fee:</span>
+                <span className="text-brand-700 text-sm">₹{selectedTier?.price}</span>
               </div>
 
-              <button type="submit" className="btn-gold w-full py-2.5 font-bold text-xs">
+              <button type="submit" className="btn-gold w-full py-2.5 font-bold text-xs shadow-sm">
                 Confirm Enrollment
               </button>
             </form>

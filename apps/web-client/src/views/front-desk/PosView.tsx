@@ -249,8 +249,15 @@ export const PosView: React.FC = () => {
       };
 
       const res = await apiClient.post('/pos/checkout', payload);
-      if (res.data.success) {
-        setCompletedInvoice(res.data.data);
+      if (res.data?.success || res.status === 200 || res.status === 201) {
+        if (attachedAppointmentId) {
+          try {
+            await apiClient.put(`/appointments/${attachedAppointmentId}/status`, { status: 'COMPLETED' });
+          } catch (e) {
+            console.warn('Appointment status auto-completion note:', e);
+          }
+        }
+        setCompletedInvoice(res.data?.data || res.data);
         setAttachedAppointmentId(null);
         clearCart();
         setShowCheckoutModal(false);
@@ -266,17 +273,17 @@ export const PosView: React.FC = () => {
   return (
     <div className="h-[calc(100vh-6.5rem)] flex gap-6">
       {/* Left: Item Catalog & Touch Grid */}
-      <div className="flex-1 flex flex-col glass-card p-5 min-w-0">
+      <div className="flex-1 flex flex-col glass-card p-5 min-w-0 bg-white border-slate-200/80 shadow-sm">
         {/* Top Controls: Tabs & Search */}
-        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between pb-4 border-b border-slate-800">
-          <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between pb-4 border-b border-slate-200">
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner">
             <button
               onClick={() => {
                 setActiveTab('SERVICES');
                 setSelectedCategory('ALL');
               }}
               className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                activeTab === 'SERVICES' ? 'bg-brand-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+                activeTab === 'SERVICES' ? 'bg-brand-500 text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               ✂️ Salon Services
@@ -287,7 +294,7 @@ export const PosView: React.FC = () => {
                 setSelectedCategory('ALL');
               }}
               className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                activeTab === 'PRODUCTS' ? 'bg-brand-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+                activeTab === 'PRODUCTS' ? 'bg-brand-500 text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               🧴 Retail Products
@@ -307,13 +314,13 @@ export const PosView: React.FC = () => {
         </div>
 
         {/* Category Pills */}
-        <div className="flex items-center gap-2 py-3 overflow-x-auto border-b border-slate-800/80">
+        <div className="flex items-center gap-2 py-3 overflow-x-auto border-b border-slate-200">
           <button
             onClick={() => setSelectedCategory('ALL')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-colors ${
               selectedCategory === 'ALL'
-                ? 'bg-slate-700 text-white'
-                : 'bg-slate-950/60 text-slate-400 hover:text-white'
+                ? 'bg-slate-800 text-white shadow-sm'
+                : 'bg-slate-100 text-slate-600 hover:text-slate-900'
             }`}
           >
             All Items
@@ -324,8 +331,8 @@ export const PosView: React.FC = () => {
               onClick={() => setSelectedCategory(cat._id)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-colors ${
                 selectedCategory === cat._id
-                  ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
-                  : 'bg-slate-950/60 text-slate-400 hover:text-white'
+                  ? 'bg-brand-50 text-brand-700 border border-brand-300 font-bold'
+                  : 'bg-slate-100 text-slate-600 hover:text-slate-900'
               }`}
             >
               {cat.name}
@@ -349,10 +356,10 @@ export const PosView: React.FC = () => {
                   staffName: staffList[0]?.displayName,
                 })
               }
-              className="p-4 rounded-xl bg-slate-950/70 border border-slate-800/80 hover:border-brand-500/50 hover:bg-slate-900 flex flex-col justify-between text-left transition-all active:scale-[0.98] group relative overflow-hidden"
+              className="p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-500 hover:bg-amber-50/30 flex flex-col justify-between text-left transition-all active:scale-[0.98] group relative overflow-hidden shadow-sm"
             >
               <div>
-                <div className="text-xs font-bold text-slate-200 group-hover:text-brand-300 transition-colors line-clamp-2">
+                <div className="text-xs font-bold text-slate-900 group-hover:text-brand-700 transition-colors line-clamp-2">
                   {item.name}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
@@ -361,8 +368,8 @@ export const PosView: React.FC = () => {
                     <span
                       className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
                         (item.currentQuantity ?? 0) > 0
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                          : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-rose-50 text-rose-700 border border-rose-200'
                       }`}
                     >
                       {(item.currentQuantity ?? 0) > 0 ? `${item.currentQuantity} in stock` : 'Out of stock'}
@@ -370,11 +377,11 @@ export const PosView: React.FC = () => {
                   )}
                 </div>
               </div>
-              <div className="flex items-center justify-between mt-4 pt-2 border-t border-slate-800/60">
-                <span className="font-extrabold text-sm text-white">
+              <div className="flex items-center justify-between mt-4 pt-2 border-t border-slate-200">
+                <span className="font-extrabold text-sm text-slate-900">
                   ₹{activeTab === 'SERVICES' ? (item.effectivePrice || item.basePrice) : item.retailPrice}
                 </span>
-                <span className="p-1.5 rounded-lg bg-brand-500/10 text-brand-400 group-hover:bg-brand-500 group-hover:text-slate-950 transition-colors">
+                <span className="p-1.5 rounded-lg bg-brand-50 text-brand-700 group-hover:bg-brand-500 group-hover:text-slate-950 transition-colors">
                   <Plus className="w-3.5 h-3.5" />
                 </span>
               </div>
@@ -384,19 +391,19 @@ export const PosView: React.FC = () => {
       </div>
 
       {/* Right: Real-time Cart & Checkout Panel */}
-      <div className="w-96 glass-card p-5 flex flex-col justify-between shrink-0">
+      <div className="w-96 glass-card p-5 flex flex-col justify-between shrink-0 bg-white border-slate-200/80 shadow-sm">
         <div>
           {/* Customer Selection Banner */}
-          <div className="pb-4 border-b border-slate-800">
+          <div className="pb-4 border-b border-slate-200">
             {customer ? (
-              <div className="p-3 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between">
                 <div>
-                  <div className="font-bold text-xs text-brand-300">{customer.fullName}</div>
-                  <div className="text-[11px] text-slate-400">{customer.phone}</div>
+                  <div className="font-bold text-xs text-amber-900">{customer.fullName}</div>
+                  <div className="text-[11px] text-slate-600">{customer.phone}</div>
                 </div>
                 <button
                   onClick={() => setCustomer(null)}
-                  className="text-xs text-slate-400 hover:text-rose-400 p-1"
+                  className="text-xs text-slate-400 hover:text-rose-600 p-1"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -404,7 +411,7 @@ export const PosView: React.FC = () => {
             ) : (
               <button
                 onClick={() => setShowCustomerModal(true)}
-                className="w-full py-2.5 px-3 rounded-xl border border-dashed border-slate-700 hover:border-brand-500/50 bg-slate-950/40 text-xs font-semibold text-brand-400 hover:text-brand-300 flex items-center justify-center gap-2 transition-colors"
+                className="w-full py-2.5 px-3 rounded-xl border border-dashed border-slate-300 hover:border-brand-500 bg-slate-50 text-xs font-semibold text-brand-700 hover:text-brand-800 flex items-center justify-center gap-2 transition-colors shadow-sm"
               >
                 <User className="w-4 h-4" /> + Attach Customer (Required)
               </button>
@@ -414,36 +421,36 @@ export const PosView: React.FC = () => {
           {/* Cart Items List */}
           <div className="py-3 max-h-60 overflow-y-auto space-y-2 pr-1">
             {items.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 text-xs">Cart is empty. Tap items on left to add.</div>
+              <div className="text-center py-8 text-slate-400 text-xs">Cart is empty. Tap items on left to add.</div>
             ) : (
               items.map((item) => (
-                <div key={item.id} className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 text-xs">
+                <div key={item.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs shadow-sm">
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-slate-200 line-clamp-1">{item.name}</span>
+                    <span className="font-semibold text-slate-800 line-clamp-1">{item.name}</span>
                     <button
                       onClick={() => removeItem(item.id)}
-                      className="text-slate-500 hover:text-rose-400 ml-2"
+                      className="text-slate-400 hover:text-rose-600 ml-2"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
-                  <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-800/40">
+                  <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-200">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => updateItemQuantity(item.id, item.quantity - 1)}
-                        className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300"
+                        className="w-5 h-5 rounded bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-bold"
                       >
                         -
                       </button>
-                      <span className="font-bold text-slate-200">{item.quantity}</span>
+                      <span className="font-bold text-slate-900">{item.quantity}</span>
                       <button
                         onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
-                        className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300"
+                        className="w-5 h-5 rounded bg-white border border-slate-300 hover:bg-slate-100 flex items-center justify-center text-slate-700 font-bold"
                       >
                         +
                       </button>
                     </div>
-                    <span className="font-bold text-slate-100">₹{item.quantity * item.unitPrice}</span>
+                    <span className="font-bold text-slate-900">₹{item.quantity * item.unitPrice}</span>
                   </div>
                 </div>
               ))
@@ -452,13 +459,13 @@ export const PosView: React.FC = () => {
         </div>
 
         {/* Bill Breakdown & Pay Button */}
-        <div className="pt-4 border-t border-slate-800 space-y-2 text-xs">
-          <div className="flex justify-between text-slate-400">
+        <div className="pt-4 border-t border-slate-200 space-y-2 text-xs">
+          <div className="flex justify-between text-slate-500">
             <span>Subtotal</span>
-            <span className="text-slate-200">₹{subtotal.toLocaleString('en-IN')}</span>
+            <span className="text-slate-800 font-medium">₹{subtotal.toLocaleString('en-IN')}</span>
           </div>
 
-          <div className="flex justify-between items-center text-slate-400">
+          <div className="flex justify-between items-center text-slate-500">
             <span>Discount</span>
             <div className="flex items-center gap-1.5">
               <input
@@ -467,26 +474,26 @@ export const PosView: React.FC = () => {
                 value={discountValue || ''}
                 onChange={(e) => setDiscount(discountType, Number(e.target.value))}
                 placeholder="0"
-                className="w-16 bg-slate-950 border border-slate-800 rounded px-2 py-0.5 text-right text-xs text-brand-400"
+                className="w-16 bg-white border border-slate-300 rounded px-2 py-0.5 text-right text-xs text-brand-700 font-bold"
               />
-              <span className="text-slate-500">₹</span>
+              <span className="text-slate-400">₹</span>
             </div>
           </div>
 
-          <div className="flex justify-between text-slate-400">
+          <div className="flex justify-between text-slate-500">
             <span>GST (18% inclusive)</span>
-            <span className="text-slate-200">₹{Math.round(taxAmount).toLocaleString('en-IN')}</span>
+            <span className="text-slate-800 font-medium">₹{Math.round(taxAmount).toLocaleString('en-IN')}</span>
           </div>
 
-          <div className="flex justify-between items-center pt-3 border-t border-slate-800">
-            <span className="text-sm font-bold text-white">Grand Total</span>
-            <span className="text-xl font-black text-brand-400">₹{grandTotal.toLocaleString('en-IN')}</span>
+          <div className="flex justify-between items-center pt-3 border-t border-slate-200">
+            <span className="text-sm font-bold text-slate-900">Grand Total</span>
+            <span className="text-xl font-black text-brand-700">₹{grandTotal.toLocaleString('en-IN')}</span>
           </div>
 
           <button
             disabled={items.length === 0}
             onClick={() => setShowCheckoutModal(true)}
-            className="btn-gold w-full py-3 mt-2 font-extrabold text-sm"
+            className="btn-gold w-full py-3 mt-2 font-extrabold text-sm shadow-sm"
           >
             <CreditCard className="w-4 h-4" /> Collect Payment & Bill
           </button>
@@ -495,13 +502,13 @@ export const PosView: React.FC = () => {
 
       {/* Attach Customer Modal */}
       {showCustomerModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full glass-card p-6 border-slate-800">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <User className="w-4 h-4 text-brand-400" /> Select / Search Customer
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-md w-full glass-card p-6 bg-white border-slate-200 shadow-xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <User className="w-4 h-4 text-brand-600" /> Select / Search Customer
               </h3>
-              <button onClick={() => setShowCustomerModal(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowCustomerModal(false)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -532,15 +539,15 @@ export const PosView: React.FC = () => {
                     });
                     setShowCustomerModal(false);
                   }}
-                  className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-brand-500/50 cursor-pointer flex items-center justify-between transition-colors"
+                  className="p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-500 cursor-pointer flex items-center justify-between transition-colors shadow-sm"
                 >
                   <div>
-                    <div className="font-bold text-xs text-white">{c.fullName}</div>
-                    <div className="text-[11px] text-slate-400">{c.phone}</div>
+                    <div className="font-bold text-xs text-slate-900">{c.fullName}</div>
+                    <div className="text-[11px] text-slate-500">{c.phone}</div>
                   </div>
                   <div className="text-right text-[11px]">
-                    <div className="text-emerald-400 font-semibold">Wallet: ₹{c.walletBalance || 0}</div>
-                    <div className="text-brand-400">Pts: {c.loyaltyPoints || 0}</div>
+                    <div className="text-emerald-700 font-semibold">Wallet: ₹{c.walletBalance || 0}</div>
+                    <div className="text-brand-700 font-medium">Pts: {c.loyaltyPoints || 0}</div>
                   </div>
                 </div>
               ))}
@@ -551,25 +558,25 @@ export const PosView: React.FC = () => {
 
       {/* Checkout & Split Payment Modal */}
       {showCheckoutModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full glass-card p-6 border-slate-800">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-brand-400" /> Payment & Receipt Generation
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-md w-full glass-card p-6 bg-white border-slate-200 shadow-xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-brand-600" /> Payment & Receipt Generation
               </h3>
-              <button onClick={() => setShowCheckoutModal(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowCheckoutModal(false)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-center mb-5">
-              <div className="text-xs text-slate-400">Total Amount to Collect</div>
-              <div className="text-3xl font-black text-brand-400 mt-1">₹{grandTotal.toLocaleString('en-IN')}</div>
-              <div className="text-xs text-slate-400 mt-1">Customer: {customer?.fullName}</div>
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center mb-5">
+              <div className="text-xs text-slate-500">Total Amount to Collect</div>
+              <div className="text-3xl font-black text-brand-700 mt-1">₹{grandTotal.toLocaleString('en-IN')}</div>
+              <div className="text-xs text-slate-500 mt-1">Customer: {customer?.fullName}</div>
             </div>
 
             <div className="space-y-3 mb-6">
-              <label className="block text-xs font-semibold text-slate-300">Choose Payment Method</label>
+              <label className="block text-xs font-semibold text-slate-700">Choose Payment Method</label>
               <div className="grid grid-cols-3 gap-2">
                 {(['UPI', 'CASH', 'CARD', 'WALLET', 'SPLIT'] as const).map((method) => (
                   <button
@@ -577,8 +584,8 @@ export const PosView: React.FC = () => {
                     onClick={() => setPaymentMethod(method)}
                     className={`p-3 rounded-xl border text-xs font-bold transition-all ${
                       paymentMethod === method
-                        ? 'bg-brand-500 text-slate-950 border-brand-500 shadow-md'
-                        : 'bg-slate-950/70 border-slate-800 text-slate-300 hover:border-slate-700'
+                        ? 'bg-brand-500 text-slate-950 border-brand-500 shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
                     }`}
                   >
                     {method}
@@ -590,7 +597,7 @@ export const PosView: React.FC = () => {
             <button
               onClick={handleCheckout}
               disabled={isProcessing}
-              className="btn-gold w-full py-3 font-extrabold text-sm"
+              className="btn-gold w-full py-3 font-extrabold text-sm shadow-sm"
             >
               {isProcessing ? 'Processing Transaction...' : 'Confirm Payment & Print Receipt'}
             </button>
@@ -600,26 +607,26 @@ export const PosView: React.FC = () => {
 
       {/* Invoice Generated Modal */}
       {completedInvoice && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full glass-card p-6 border-slate-800 text-center">
-            <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-3">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-md w-full glass-card p-6 bg-white border-slate-200 text-center shadow-xl">
+            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto mb-3">
               <CheckCircle2 className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-extrabold text-white">Invoice Generated</h3>
-            <p className="text-xs text-slate-400 mt-1">Invoice #{completedInvoice.invoiceNumber}</p>
+            <h3 className="text-base font-extrabold text-slate-900">Invoice Generated</h3>
+            <p className="text-xs text-slate-500 mt-1">Invoice #{completedInvoice.invoiceNumber}</p>
 
-            <div className="my-5 p-4 rounded-xl bg-slate-950 border border-slate-800 text-left text-xs space-y-2">
+            <div className="my-5 p-4 rounded-xl bg-slate-50 border border-slate-200 text-left text-xs space-y-2">
               <div className="flex justify-between">
-                <span className="text-slate-400">Client:</span>
-                <span className="text-white font-bold">{completedInvoice.customerName}</span>
+                <span className="text-slate-500">Client:</span>
+                <span className="text-slate-900 font-bold">{completedInvoice.customerName}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Total Paid:</span>
-                <span className="text-brand-400 font-bold">₹{completedInvoice.totalAmount}</span>
+                <span className="text-slate-500">Total Paid:</span>
+                <span className="text-brand-700 font-bold">₹{completedInvoice.totalAmount}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Payment Mode:</span>
-                <span className="text-emerald-400 font-bold">{completedInvoice.payments?.[0]?.method || 'PAID'}</span>
+                <span className="text-slate-500">Payment Mode:</span>
+                <span className="text-emerald-700 font-bold">{completedInvoice.payments?.[0]?.method || 'PAID'}</span>
               </div>
             </div>
 

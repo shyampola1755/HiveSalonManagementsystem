@@ -55,32 +55,32 @@ export const FinanceView: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 glass-card p-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
             <DollarSign className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-white">Expenses, Cash Flow & Financial Ledger</h2>
-            <p className="text-xs text-slate-400">Salon operating costs, vendor payments, rent, and utility deductions</p>
+            <h2 className="text-lg font-extrabold text-slate-900">Expenses, Cash Flow & Financial Ledger</h2>
+            <p className="text-xs text-slate-500">Salon operating costs, vendor payments, rent, and utility deductions</p>
           </div>
         </div>
 
-        <button onClick={() => setShowModal(true)} className="btn-gold text-xs font-bold px-4 py-2">
+        <button onClick={() => setShowModal(true)} className="btn-gold text-xs font-bold px-4 py-2 shadow-sm">
           <Plus className="w-4 h-4" /> Record Expense
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-card p-5 border-slate-800">
-          <div className="text-xs font-semibold text-slate-400">TOTAL RECORDED EXPENSES</div>
-          <div className="text-2xl font-black text-rose-400 mt-1">₹{totalExpenseAmount.toLocaleString('en-IN')}</div>
-          <div className="text-[11px] text-slate-500 mt-0.5">{expenses.length} expense entries</div>
+        <div className="glass-card p-5 border-slate-200 bg-white shadow-sm">
+          <div className="text-xs font-semibold text-slate-500">TOTAL RECORDED EXPENSES</div>
+          <div className="text-2xl font-black text-rose-600 mt-1">₹{totalExpenseAmount.toLocaleString('en-IN')}</div>
+          <div className="text-[11px] text-slate-400 mt-0.5">{expenses.length} expense entries</div>
         </div>
       </div>
 
       <div className="glass-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-slate-950/70 text-slate-400 uppercase font-bold text-[10px] tracking-wider border-b border-slate-800">
+          <table className="w-full text-left text-xs text-slate-700">
+            <thead className="bg-slate-50 text-slate-600 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
               <tr>
                 <th className="p-4">Expense Description</th>
                 <th className="p-4">Category</th>
@@ -89,16 +89,16 @@ export const FinanceView: React.FC = () => {
                 <th className="p-4">Date Recorded</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100">
               {expenses.map((exp) => (
-                <tr key={exp._id} className="hover:bg-slate-800/40 transition-colors">
-                  <td className="p-4 font-bold text-white text-sm">{exp.title}</td>
+                <tr key={exp._id} className="hover:bg-slate-50 transition-colors">
+                  <td className="p-4 font-bold text-slate-900 text-sm">{exp.title}</td>
                   <td className="p-4">
                     <span className="badge-gold text-[10px]">{exp.category}</span>
                   </td>
-                  <td className="p-4 font-bold text-rose-400 font-mono text-sm">-₹{exp.amount?.toLocaleString('en-IN')}</td>
-                  <td className="p-4 text-slate-300">{exp.paidVia}</td>
-                  <td className="p-4 text-slate-400">{new Date(exp.expenseDate).toLocaleDateString()}</td>
+                  <td className="p-4 font-bold text-rose-600 font-mono text-sm">-₹{exp.amount?.toLocaleString('en-IN')}</td>
+                  <td className="p-4 text-slate-600">{exp.paidVia}</td>
+                  <td className="p-4 text-slate-500">{new Date(exp.expenseDate).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>
@@ -107,18 +107,18 @@ export const FinanceView: React.FC = () => {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full glass-card p-6 border-slate-800">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-              <h3 className="text-sm font-bold text-white">Record Operating Expense</h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-md w-full glass-card p-6 border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+              <h3 className="text-sm font-bold text-slate-900">Record Operating Expense</h3>
+              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleCreate} className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Expense Title</label>
+                <label className="block text-slate-700 font-semibold mb-1">Expense Title</label>
                 <input
                   type="text"
                   required
@@ -131,11 +131,11 @@ export const FinanceView: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Category</label>
+                  <label className="block text-slate-700 font-semibold mb-1">Category</label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="input-field"
+                    className="input-field bg-white"
                   >
                     <option value="UTILITIES">Utilities</option>
                     <option value="RENT">Rent & Lease</option>
@@ -147,7 +147,7 @@ export const FinanceView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Amount (INR)</label>
+                  <label className="block text-slate-700 font-semibold mb-1">Amount (INR)</label>
                   <input
                     type="number"
                     required
@@ -159,11 +159,11 @@ export const FinanceView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Payment Mode</label>
+                <label className="block text-slate-700 font-semibold mb-1">Payment Mode</label>
                 <select
                   value={formData.paidVia}
                   onChange={(e) => setFormData({ ...formData, paidVia: e.target.value })}
-                  className="input-field"
+                  className="input-field bg-white"
                 >
                   <option value="BANK_TRANSFER">Bank IMPS / NEFT</option>
                   <option value="UPI">UPI / QR Code</option>
@@ -172,7 +172,7 @@ export const FinanceView: React.FC = () => {
                 </select>
               </div>
 
-              <button type="submit" className="btn-gold w-full py-2.5 font-bold text-xs mt-2">
+              <button type="submit" className="btn-gold w-full py-2.5 font-bold text-xs mt-2 shadow-md">
                 Save & Log Expense
               </button>
             </form>

@@ -28,21 +28,21 @@ export const LoyaltyView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between glass-card p-5">
+      <div className="flex items-center justify-between glass-card p-5 bg-white border-slate-200/80 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-brand-600 border border-amber-200 flex items-center justify-center">
             <Award className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-white">Loyalty & Rewards Program</h2>
-            <p className="text-xs text-slate-400">1 Point earned for every ₹100 spent • Instant redemption at POS</p>
+            <h2 className="text-lg font-extrabold text-slate-900">Loyalty & Rewards Program</h2>
+            <p className="text-xs text-slate-500">1 Point earned for every ₹100 spent • Instant redemption at POS</p>
           </div>
         </div>
       </div>
 
-      <div className="glass-card overflow-hidden">
-        <div className="p-4 border-b border-slate-800 flex justify-between items-center">
-          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">Top Loyalty Point Holders</h3>
+      <div className="glass-card overflow-hidden bg-white border-slate-200/80 shadow-sm">
+        <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Top Loyalty Point Holders</h3>
           <div className="relative w-64">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
             <input
@@ -56,8 +56,8 @@ export const LoyaltyView: React.FC = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-slate-950/70 text-slate-400 uppercase font-bold text-[10px] tracking-wider border-b border-slate-800">
+          <table className="w-full text-left text-xs text-slate-700">
+            <thead className="bg-slate-50 text-slate-600 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
               <tr>
                 <th className="p-4">Customer Name</th>
                 <th className="p-4">Contact</th>
@@ -66,18 +66,18 @@ export const LoyaltyView: React.FC = () => {
                 <th className="p-4">Total Visits</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100">
               {customers.map((c) => (
-                <tr key={c._id} className="hover:bg-slate-800/40 transition-colors">
-                  <td className="p-4 font-bold text-white text-sm">{c.fullName}</td>
-                  <td className="p-4 text-slate-400">{c.phone}</td>
-                  <td className="p-4 font-extrabold text-brand-400 text-sm">
+                <tr key={c._id} className="hover:bg-slate-50 transition-colors">
+                  <td className="p-4 font-bold text-slate-900 text-sm">{c.fullName}</td>
+                  <td className="p-4 text-slate-500">{c.phone}</td>
+                  <td className="p-4 font-extrabold text-brand-700 text-sm">
                     {c.loyaltyPoints} pts
                   </td>
-                  <td className="p-4 font-bold text-emerald-400">
+                  <td className="p-4 font-bold text-emerald-700">
                     ₹{c.loyaltyPoints} (1 pt = ₹1)
                   </td>
-                  <td className="p-4 text-slate-200 font-semibold">{c.totalVisits || 0} visits</td>
+                  <td className="p-4 text-slate-800 font-semibold">{c.totalVisits || 0} visits</td>
                 </tr>
               ))}
             </tbody>

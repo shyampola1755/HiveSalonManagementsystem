@@ -57,8 +57,8 @@ export const AppShell: React.FC = () => {
     'Hyderabad Flagship';
 
   return (
-    <div className="flex min-h-screen bg-[#0b0f19] text-slate-100">
-      {/* Sidebar Navigation */}
+    <div className="flex min-h-screen bg-slate-50 text-slate-900">
+      {/* Sidebar Navigation - preserved exact dark styling */}
       <Sidebar />
 
       {/* Main Content Area */}
@@ -68,13 +68,13 @@ export const AppShell: React.FC = () => {
           {/* Portal Switcher Buttons (or role-specific portal pill) */}
           <div className="flex items-center gap-3">
             {canAccessBackOffice ? (
-              <div className="bg-slate-950/80 p-1 rounded-xl border border-slate-800 flex items-center gap-1 shadow-inner">
+              <div className="bg-slate-100 p-1 rounded-xl border border-slate-200 flex items-center gap-1 shadow-inner">
                 <button
                   onClick={() => handlePortalSwitch('front-desk')}
                   className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     activePortal === 'front-desk'
-                      ? 'bg-brand-500 text-slate-950 shadow-md font-bold'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-brand-500 text-slate-950 shadow-sm font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <Sparkles className="w-3.5 h-3.5" />
@@ -84,8 +84,8 @@ export const AppShell: React.FC = () => {
                   onClick={() => handlePortalSwitch('back-office')}
                   className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     activePortal === 'back-office'
-                      ? 'bg-brand-500 text-slate-950 shadow-md font-bold'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-brand-500 text-slate-950 shadow-sm font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <Layers className="w-3.5 h-3.5" />
@@ -93,13 +93,13 @@ export const AppShell: React.FC = () => {
                 </button>
               </div>
             ) : isStylist ? (
-              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-bold">
-                <Scissors className="w-3.5 h-3.5 text-rose-400" />
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
+                <Scissors className="w-3.5 h-3.5 text-rose-600" />
                 Stylist Workstation
               </div>
             ) : (
-              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-300 text-xs font-bold">
-                <Sparkles className="w-3.5 h-3.5 text-brand-400" />
+              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold">
+                <Sparkles className="w-3.5 h-3.5 text-brand-600" />
                 Front Desk Operations & POS
               </div>
             )}
@@ -110,11 +110,11 @@ export const AppShell: React.FC = () => {
             {/* Branch Selector / Display */}
             {isSuperAdmin ? (
               <div className="relative flex items-center">
-                <Building2 className="w-4 h-4 text-brand-400 absolute left-3 pointer-events-none" />
+                <Building2 className="w-4 h-4 text-brand-600 absolute left-3 pointer-events-none" />
                 <select
                   value={activeBranchId || ''}
                   onChange={(e) => setActiveBranchId(e.target.value)}
-                  className="bg-slate-950/70 border border-slate-800 text-xs font-medium rounded-xl pl-9 pr-8 py-2 text-slate-200 focus:outline-none focus:border-brand-500 appearance-none cursor-pointer hover:border-slate-700 transition-colors"
+                  className="bg-white border border-slate-200 text-xs font-medium rounded-xl pl-9 pr-8 py-2 text-slate-800 focus:outline-none focus:border-brand-500 appearance-none cursor-pointer hover:border-slate-300 shadow-sm transition-colors"
                 >
                   {branchList.map((b) => {
                     const bId = String(b.id || (b as any)._id);
@@ -128,8 +128,8 @@ export const AppShell: React.FC = () => {
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 pointer-events-none" />
               </div>
             ) : (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-medium text-slate-300">
-                <Building2 className="w-3.5 h-3.5 text-brand-400 shrink-0" />
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-medium text-slate-700 shadow-sm">
+                <Building2 className="w-3.5 h-3.5 text-brand-600 shrink-0" />
                 <span className="truncate max-w-[220px]">{activeBranchName}</span>
               </div>
             )}
@@ -138,7 +138,7 @@ export const AppShell: React.FC = () => {
             {!isStylist && (
               <button
                 onClick={() => navigate('/front-desk/pos')}
-                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors"
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors shadow-sm"
               >
                 <ShoppingBag className="w-3.5 h-3.5" />
                 New Sale
@@ -146,22 +146,22 @@ export const AppShell: React.FC = () => {
             )}
 
             {/* User Profile & Role Pill */}
-            <div className="flex items-center gap-3 pl-2 border-l border-slate-800">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-400 to-amber-600 flex items-center justify-center text-slate-950 font-bold text-xs shadow-sm">
+            <div className="flex items-center gap-3 pl-2 border-l border-slate-200">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-400 to-amber-500 flex items-center justify-center text-slate-950 font-bold text-xs shadow-sm">
                 {user?.fullName?.charAt(0) || 'U'}
               </div>
               <div className="hidden md:block text-left text-xs">
-                <div className="font-semibold text-slate-200">{user?.fullName || 'User'}</div>
+                <div className="font-semibold text-slate-800">{user?.fullName || 'User'}</div>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span
                     className={`text-[10px] px-1.5 py-0.2 rounded font-bold uppercase ${
                       isSuperAdmin
-                        ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                        ? 'bg-purple-100 text-purple-700 border border-purple-200'
                         : isManager
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                        ? 'bg-amber-100 text-amber-800 border border-amber-200'
                         : isStylist
-                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                        : 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                        ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                        : 'bg-sky-100 text-sky-700 border border-sky-200'
                     }`}
                   >
                     {user?.role?.replace('_', ' ') || 'Staff'}
@@ -171,7 +171,7 @@ export const AppShell: React.FC = () => {
               <button
                 onClick={logout}
                 title="Log Out"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors ml-1"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors ml-1"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -180,7 +180,7 @@ export const AppShell: React.FC = () => {
         </header>
 
         {/* Dynamic Portal Page Route Outlet */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="flex-1 p-6 overflow-y-auto bg-slate-50">
           <Outlet />
         </main>
       </div>

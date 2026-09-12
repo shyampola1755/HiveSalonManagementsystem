@@ -161,19 +161,31 @@ export const processCheckout = asyncHandler(async (req: AuthRequest, res: Respon
   await customer.save();
 
   // If appointment was attached or customer has active appointments, mark them completed
-  if (appointmentId && mongoose.Types.ObjectId.isValid(String(appointmentId))) {
-    await Appointment.findByIdAndUpdate(appointmentId, {
-      status: 'COMPLETED',
-      invoiceId: invoice._id,
-    });
-  } else if (customer?._id) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  if (appointmentId) {
+    if (mongoose.Types.ObjectId.isValid(String(appointmentId))) {
+      await Appointment.findByIdAndUpdate(appointmentId, {
+        status: 'COMPLETED',
+        invoiceId: invoice._id,
+      });
+    } else {
+      await Appointment.updateMany(
+        { _id: appointmentId },
+        { status: 'COMPLETED', invoiceId: invoice._id }
+      );
+    }
+  }
+
+  const matchConditions: any[] = [];
+  if (customer?._id) matchConditions.push({ customerId: customer._id });
+  if (customer?.fullName) matchConditions.push({ customerName: customer.fullName });
+  if (req.body.customerName) matchConditions.push({ customerName: req.body.customerName });
+  if (customer?.phone) matchConditions.push({ customerPhone: customer.phone });
+
+  if (matchConditions.length > 0) {
     await Appointment.updateMany(
       {
         organizationId: req.organizationId,
-        customerId: customer._id,
-        appointmentDate: { $gte: today, $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) },
+        $or: matchConditions,
         status: { $in: ['IN_SERVICE', 'CHECKED_IN', 'SCHEDULED', 'CONFIRMED'] },
       },
       {

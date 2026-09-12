@@ -117,21 +117,21 @@ export const LoginView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#070a12] flex items-center justify-center p-4 relative overflow-hidden selection:bg-brand-500 selection:text-slate-950">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden selection:bg-brand-500 selection:text-slate-950">
       {/* Background Ambient Glows */}
       <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-1/4 right-1/3 w-96 h-96 bg-amber-600/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-1/4 right-1/3 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="max-w-md w-full glass-card p-8 border-slate-800/80 shadow-2xl relative z-10">
+      <div className="max-w-md w-full glass-card p-8 border-slate-200 bg-white shadow-2xl relative z-10">
         {/* Brand Header */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-400 via-brand-500 to-amber-300 flex items-center justify-center text-slate-950 font-extrabold text-2xl mx-auto shadow-glow mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-400 via-brand-500 to-amber-400 flex items-center justify-center text-slate-950 font-extrabold text-2xl mx-auto shadow-md mb-4">
             H
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-white flex items-center justify-center gap-2">
-            HIVE <span className="text-brand-400 font-semibold">SALON</span>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900 flex items-center justify-center gap-2">
+            HIVE <span className="text-brand-600 font-semibold">SALON</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1 font-medium">
+          <p className="text-xs text-slate-500 mt-1 font-medium">
             Centralized Multi-Branch Enterprise ERP & POS Platform (MERN)
           </p>
         </div>
@@ -139,7 +139,7 @@ export const LoginView: React.FC = () => {
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
               Email Address
             </label>
             <div className="relative">
@@ -156,7 +156,7 @@ export const LoginView: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
               Password
             </label>
             <div className="relative">
@@ -172,7 +172,7 @@ export const LoginView: React.FC = () => {
             </div>
           </div>
 
-          <button type="submit" disabled={isSubmitting} className="btn-gold w-full mt-2 py-3 text-sm font-bold">
+          <button type="submit" disabled={isSubmitting} className="btn-gold w-full mt-2 py-3 text-sm font-bold shadow-md">
             {isSubmitting ? (
               <span>Authenticating...</span>
             ) : (
@@ -184,9 +184,9 @@ export const LoginView: React.FC = () => {
         </form>
 
         {/* Quick Demo Logins for All 4 Roles */}
-        <div className="mt-8 pt-6 border-t border-slate-800">
-          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3">
-            <ShieldCheck className="w-3.5 h-3.5 text-brand-400" />
+        <div className="mt-8 pt-6 border-t border-slate-100">
+          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-3">
+            <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
             Quick Demo Profiles (Click to Auto-fill)
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -195,12 +195,12 @@ export const LoginView: React.FC = () => {
               onClick={() => quickFill('admin@hivesalon.com')}
               className={`p-2 rounded-xl text-center border transition-all ${
                 email === 'admin@hivesalon.com'
-                  ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 shadow-sm'
-                  : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border-slate-800'
+                  ? 'bg-purple-50 border-purple-300 text-purple-900 shadow-sm font-bold'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
               }`}
             >
               <div className="text-[11px] font-bold">Super Admin</div>
-              <div className="text-[9px] text-slate-400 mt-0.5">Enterprise BI</div>
+              <div className="text-[9px] text-slate-500 mt-0.5">Enterprise BI</div>
             </button>
 
             <button
@@ -208,12 +208,12 @@ export const LoginView: React.FC = () => {
               onClick={() => quickFill('manager@hivesalon.com')}
               className={`p-2 rounded-xl text-center border transition-all ${
                 email === 'manager@hivesalon.com'
-                  ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-sm'
-                  : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border-slate-800'
+                  ? 'bg-amber-50 border-amber-300 text-amber-900 shadow-sm font-bold'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
               }`}
             >
               <div className="text-[11px] font-bold">Branch Mgr</div>
-              <div className="text-[9px] text-slate-400 mt-0.5">Floor Hub</div>
+              <div className="text-[9px] text-slate-500 mt-0.5">Floor Hub</div>
             </button>
 
             <button
@@ -221,12 +221,12 @@ export const LoginView: React.FC = () => {
               onClick={() => quickFill('frontdesk@hivesalon.com')}
               className={`p-2 rounded-xl text-center border transition-all ${
                 email === 'frontdesk@hivesalon.com'
-                  ? 'bg-sky-500/20 border-sky-500/50 text-sky-300 shadow-sm'
-                  : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border-slate-800'
+                  ? 'bg-sky-50 border-sky-300 text-sky-900 shadow-sm font-bold'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
               }`}
             >
               <div className="text-[11px] font-bold">Front Desk</div>
-              <div className="text-[9px] text-slate-400 mt-0.5">POS & Queue</div>
+              <div className="text-[9px] text-slate-500 mt-0.5">POS & Queue</div>
             </button>
 
             <button
@@ -234,12 +234,12 @@ export const LoginView: React.FC = () => {
               onClick={() => quickFill('vikram@hivesalon.com')}
               className={`p-2 rounded-xl text-center border transition-all ${
                 email === 'vikram@hivesalon.com'
-                  ? 'bg-rose-500/20 border-rose-500/50 text-rose-300 shadow-sm'
-                  : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border-slate-800'
+                  ? 'bg-rose-50 border-rose-300 text-rose-900 shadow-sm font-bold'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
               }`}
             >
               <div className="text-[11px] font-bold">Stylist</div>
-              <div className="text-[9px] text-slate-400 mt-0.5">Chair & Formulas</div>
+              <div className="text-[9px] text-slate-500 mt-0.5">Chair & Formulas</div>
             </button>
           </div>
         </div>

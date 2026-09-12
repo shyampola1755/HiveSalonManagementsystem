@@ -277,7 +277,7 @@ const saveStorageList = (key: string, data: any[]): void => {
   } catch (e) {}
 };
 
-const isStandaloneDemo = typeof window !== 'undefined' && (!import.meta.env.VITE_API_URL || window.location.hostname.includes('vercel.app'));
+const isStandaloneDemo = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app') && !import.meta.env.VITE_API_URL;
 
 // Request interceptor to attach JWT token and active branch header
 apiClient.interceptors.request.use((config) => {

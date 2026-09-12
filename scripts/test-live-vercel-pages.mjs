@@ -16,6 +16,7 @@ async function verifyLiveVercel() {
   });
 
   const page = await browser.newPage();
+  await page.setCacheEnabled(false);
   page.on('console', msg => console.log('PAGE LOG:', msg.text()));
   page.on('pageerror', err => console.log('PAGE ERROR:', err.toString()));
 
@@ -36,7 +37,7 @@ async function verifyLiveVercel() {
   // 2. Front Desk Hub
   console.log('Verifying Front Desk Hub on Vercel...');
   await page.goto(`${TARGET_URL}/front-desk/dashboard`, { waitUntil: 'networkidle0' });
-  await new Promise(r => setTimeout(r, 1500));
+  await new Promise(r => setTimeout(r, 2500));
 
   const debugDash = await page.evaluate(async () => {
     try {
@@ -76,6 +77,18 @@ async function verifyLiveVercel() {
   console.log('Verifying Invoices & Receipts on Vercel...');
   await page.goto(`${TARGET_URL}/front-desk/invoices`, { waitUntil: 'networkidle0' });
   await new Promise(r => setTimeout(r, 1500));
+
+  const debugInvoices = await page.evaluate(async () => {
+    try {
+      // Test direct fetch or inspect window
+      const storageInvs = localStorage.getItem('hive_db_invoices');
+      return { storageInvs: storageInvs ? JSON.parse(storageInvs).length : null };
+    } catch (e) {
+      return { error: e.message };
+    }
+  });
+  console.log('Invoices Debug Data:', debugInvoices);
+
   await page.screenshot({ path: path.join(ARTIFACT_DIR, 'vercel_live_03_invoices.png') });
   console.log('📸 Captured vercel_live_03_invoices.png');
 
@@ -85,6 +98,20 @@ async function verifyLiveVercel() {
   await new Promise(r => setTimeout(r, 1500));
   await page.screenshot({ path: path.join(ARTIFACT_DIR, 'vercel_live_04_queue.png') });
   console.log('📸 Captured vercel_live_04_queue.png');
+
+  // 6. Appointments Calendar
+  console.log('Verifying Appointments Calendar on Vercel...');
+  await page.goto(`${TARGET_URL}/front-desk/calendar`, { waitUntil: 'networkidle0' });
+  await new Promise(r => setTimeout(r, 1500));
+  await page.screenshot({ path: path.join(ARTIFACT_DIR, 'vercel_live_05_calendar.png') });
+  console.log('📸 Captured vercel_live_05_calendar.png');
+
+  // 7. Customer CRM 360
+  console.log('Verifying Customer CRM 360 on Vercel...');
+  await page.goto(`${TARGET_URL}/front-desk/customers`, { waitUntil: 'networkidle0' });
+  await new Promise(r => setTimeout(r, 1500));
+  await page.screenshot({ path: path.join(ARTIFACT_DIR, 'vercel_live_06_customers.png') });
+  console.log('📸 Captured vercel_live_06_customers.png');
 
   console.log('✅ Vercel live verification complete!');
   await browser.close();
