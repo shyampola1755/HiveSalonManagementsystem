@@ -28,7 +28,6 @@ import { InventoryView } from './views/back-office/InventoryView';
 import { MarketingView } from './views/back-office/MarketingView';
 import { FinanceView } from './views/back-office/FinanceView';
 import { ReportsView } from './views/back-office/ReportsView';
-import { SettingsView } from './views/back-office/SettingsView';
 
 export const App: React.FC = () => {
   const { token, isLoading, canAccessBackOffice, isStylist, isSuperAdmin, isManager } = useAuth();
@@ -102,10 +101,6 @@ export const App: React.FC = () => {
         <Route
           path="/back-office/reports"
           element={canAccessBackOffice ? <ReportsView /> : <Navigate to="/front-desk/dashboard" />}
-        />
-        <Route
-          path="/back-office/settings"
-          element={isSuperAdmin ? <SettingsView /> : <Navigate to="/back-office/overview" />}
         />
       </Route>
 

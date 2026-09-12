@@ -15,7 +15,6 @@ import {
   Send,
   DollarSign,
   BarChart3,
-  Settings,
   Building2,
   Sparkles,
   ClipboardList,
@@ -75,7 +74,6 @@ export const Sidebar: React.FC = () => {
       { name: 'Marketing & Retention', path: '/back-office/marketing', icon: Send },
       { name: 'Expenses & Finance', path: '/back-office/finance', icon: DollarSign },
       { name: 'Analytics & Reports', path: '/back-office/reports', icon: Layers },
-      { name: 'System & Security Settings', path: '/back-office/settings', icon: Settings },
     ];
   };
 
