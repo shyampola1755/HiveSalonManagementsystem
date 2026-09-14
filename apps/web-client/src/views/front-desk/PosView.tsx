@@ -19,6 +19,8 @@ import {
   Receipt,
   Wallet,
   Coins,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 
 export const PosView: React.FC = () => {
@@ -125,60 +127,37 @@ export const PosView: React.FC = () => {
         };
 
         if (activeTab === 'SERVICES') {
-          const [catRes, svcRes] = await Promise.all([
+          const [catRes, svcRes, staffRes] = await Promise.all([
             apiClient.get('/services/categories'),
             apiClient.get('/services'),
+            apiClient.get('/staff'),
           ]);
           const cats = getArray(catRes);
+          if (cats.length > 0) setCategories(cats);
+
           const svcs = getArray(svcRes);
-          setCategories(cats.length > 0 ? cats : [
-            { _id: 'sc-1', name: 'Hair Services' },
-            { _id: 'sc-2', name: 'Color & Highlights' },
-            { _id: 'sc-3', name: 'Skin & Facial Therapy' },
-            { _id: 'sc-4', name: 'Nails & Hands' },
-          ]);
-          setCatalogItems(svcs.length > 0 ? svcs : [
-            { _id: 's-1', categoryId: 'sc-1', name: 'Precision Director Haircut', durationMinutes: 45, basePrice: 1500, effectivePrice: 1500, taxRate: 18 },
-            { _id: 's-2', categoryId: 'sc-2', name: 'French Balayage & Glossing', durationMinutes: 120, basePrice: 6500, effectivePrice: 6500, taxRate: 18 },
-            { _id: 's-3', categoryId: 'sc-1', name: 'Kérastase Chronologiste Luxury Ritual', durationMinutes: 60, basePrice: 3500, effectivePrice: 3500, taxRate: 18 },
-            { _id: 's-4', categoryId: 'sc-3', name: 'HydraFacial MD Platinum Rejuvenation', durationMinutes: 60, basePrice: 5500, effectivePrice: 5500, taxRate: 18 },
-            { _id: 's-5', categoryId: 'sc-4', name: 'Russian Gel Manicure & Nail Art', durationMinutes: 50, basePrice: 2000, effectivePrice: 2000, taxRate: 18 },
-          ]);
+          if (svcs.length > 0) setCatalogItems(svcs);
+
+          const stfs = getArray(staffRes);
+          if (stfs.length > 0) setStaffList(stfs);
         } else {
-          const [catRes, prodRes] = await Promise.all([
-            apiClient.get('/inventory/categories'),
-            apiClient.get('/inventory/products?isRetail=true'),
-          ]);
-          const cats = getArray(catRes);
+          const prodRes = await apiClient.get('/inventory/products');
           const prods = getArray(prodRes);
-          setCategories(cats.length > 0 ? cats : [
-            { _id: 'pc-1', name: 'Haircare & Masks' },
-            { _id: 'pc-2', name: 'Color & Developers' },
-            { _id: 'pc-3', name: 'Skincare Serums' },
-          ]);
-          setCatalogItems(prods.length > 0 ? prods : [
-            { _id: 'p-1', categoryId: 'pc-1', name: 'Absolut Repair Molecular Leave-in Mask (100ml)', sku: 'LRL-MOL-100', brand: "L'Oréal Professionnel", retailPrice: 1600, currentQuantity: 24, isRetailItem: true },
-            { _id: 'p-2', categoryId: 'pc-1', name: 'Kérastase Elixir Ultime L\'Huile Originale (100ml)', sku: 'KER-ELX-100', brand: 'Kérastase Paris', retailPrice: 3800, currentQuantity: 18, isRetailItem: true },
-            { _id: 'p-3', categoryId: 'pc-2', name: 'Dia Light Semi-Permanent Gel-Crème 7.11', sku: 'LRL-DIA-711', brand: "L'Oréal Professionnel", retailPrice: 650, currentQuantity: 35, isRetailItem: true },
-            { _id: 'p-4', categoryId: 'pc-1', name: 'Olaplex No. 7 Bonding Oil (30ml)', sku: 'OLP-BND-030', brand: 'Olaplex', retailPrice: 2800, currentQuantity: 14, isRetailItem: true },
-            { _id: 'p-5', categoryId: 'pc-3', name: 'SkinCeuticals C E Ferulic Antioxidant Serum (30ml)', sku: 'SKC-CEF-030', brand: 'SkinCeuticals', retailPrice: 11000, currentQuantity: 8, isRetailItem: true },
-          ]);
+          if (prods.length > 0) setCatalogItems(prods);
         }
-        const staffRes = await apiClient.get('/staff');
-        setStaffList(getArray(staffRes));
       } catch (err) {
-        console.error('Error fetching catalog:', err);
+        console.error('Error fetching POS items:', err);
       }
     };
+
     fetchCatalog();
   }, [activeTab, activeBranchId]);
 
-  // Customer search & initial load
-  const handleSearchCustomers = async (query = '') => {
-    setCustomerSearch(query);
+  // Customer search modal
+  const handleSearchCustomers = async (q: string) => {
+    setCustomerSearch(q);
     try {
-      const endpoint = query.trim() ? `/customers?search=${encodeURIComponent(query.trim())}` : '/customers?limit=50';
-      const res = await apiClient.get(endpoint);
+      const res = await apiClient.get(`/customers?search=${encodeURIComponent(q)}`);
       const getArray = (r: any) => {
         if (!r) return [];
         if (Array.isArray(r.data?.data)) return r.data.data;
@@ -193,28 +172,26 @@ export const PosView: React.FC = () => {
   };
 
   useEffect(() => {
-    handleSearchCustomers('');
-  }, [activeBranchId]);
+    if (showCustomerModal) {
+      handleSearchCustomers('');
+    }
+  }, [showCustomerModal]);
 
-  // Filter items by category & search
   const filteredItems = catalogItems.filter((item) => {
-    const matchesCategory =
-      selectedCategory === 'ALL' ||
-      (activeTab === 'SERVICES'
-        ? item.categoryId?._id === selectedCategory || item.categoryId === selectedCategory
-        : item.categoryId?._id === selectedCategory || item.categoryId === selectedCategory);
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    const matchesSearch = item.name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCat = selectedCategory === 'ALL' || (item.categoryId?._id || item.categoryId) === selectedCategory;
+    return matchesSearch && matchesCat;
   });
 
-  // Handle Checkout submission
+  // Handle Checkout & Invoice creation
   const handleCheckout = async () => {
     if (items.length === 0) {
-      showToast('Cart is empty. Please add items to proceed.', 'error');
+      showToast('Please add items to cart before billing', 'error');
       return;
     }
     if (!customer) {
-      showToast('Please select a customer for billing.', 'error');
+      showToast('Please attach a customer to generate the GST invoice', 'error');
+      setShowCheckoutModal(false);
       setShowCustomerModal(true);
       return;
     }
@@ -222,30 +199,34 @@ export const PosView: React.FC = () => {
     setIsProcessing(true);
     try {
       const payload = {
-        customerId: customer.id || (customer as any)._id,
+        branchId: activeBranchId,
+        customerId: customer.id,
         customerName: customer.fullName,
         customerPhone: customer.phone,
-        branchId: activeBranchId,
-        appointmentId: attachedAppointmentId || undefined,
         items: items.map((i) => ({
           itemType: i.itemType,
           itemId: i.itemId,
           name: i.name,
           quantity: i.quantity,
           unitPrice: i.unitPrice,
-          taxRate: i.taxRate,
+          taxRate: i.taxRate || 18,
           staffId: i.staffId,
           staffName: i.staffName,
         })),
         subtotal,
-        discountType,
-        discountValue,
         discountAmount,
+        discountType,
         taxAmount,
         tipAmount,
-        totalAmount: grandTotal,
         grandTotal,
-        payments: [{ method: paymentMethod, amount: grandTotal }],
+        paymentMethod,
+        payments: [
+          {
+            method: paymentMethod,
+            amount: grandTotal,
+            referenceNumber: `TXN_${Date.now()}`,
+          },
+        ],
       };
 
       const res = await apiClient.post('/pos/checkout', payload);
@@ -271,18 +252,18 @@ export const PosView: React.FC = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-6.5rem)] flex gap-6">
+    <div className="flex flex-col xl:flex-row gap-4 sm:gap-6 min-h-[calc(100vh-8rem)] xl:h-[calc(100vh-6.5rem)]">
       {/* Left: Item Catalog & Touch Grid */}
-      <div className="flex-1 flex flex-col glass-card p-5 min-w-0 bg-white border-slate-200/80 shadow-sm">
+      <div className="flex-1 flex flex-col glass-card p-3.5 sm:p-5 min-w-0 bg-white border-slate-200/80 shadow-sm overflow-hidden">
         {/* Top Controls: Tabs & Search */}
-        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between pb-4 border-b border-slate-200">
-          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner">
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between pb-3 sm:pb-4 border-b border-slate-200">
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-inner shrink-0">
             <button
               onClick={() => {
                 setActiveTab('SERVICES');
                 setSelectedCategory('ALL');
               }}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex-1 sm:flex-none px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold transition-all text-center ${
                 activeTab === 'SERVICES' ? 'bg-brand-500 text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -293,7 +274,7 @@ export const PosView: React.FC = () => {
                 setActiveTab('PRODUCTS');
                 setSelectedCategory('ALL');
               }}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              className={`flex-1 sm:flex-none px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-bold transition-all text-center ${
                 activeTab === 'PRODUCTS' ? 'bg-brand-500 text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -302,19 +283,19 @@ export const PosView: React.FC = () => {
           </div>
 
           <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5 sm:top-3" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search services or products..."
-              className="input-field pl-10 text-xs py-2"
+              className="input-field pl-10 text-xs py-1.5 sm:py-2"
             />
           </div>
         </div>
 
         {/* Category Pills */}
-        <div className="flex items-center gap-2 py-3 overflow-x-auto border-b border-slate-200">
+        <div className="flex items-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 overflow-x-auto border-b border-slate-200 no-scrollbar">
           <button
             onClick={() => setSelectedCategory('ALL')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-colors ${
@@ -341,7 +322,7 @@ export const PosView: React.FC = () => {
         </div>
 
         {/* Catalog Items Grid */}
-        <div className="flex-1 overflow-y-auto pt-4 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3.5 pr-1">
+        <div className="flex-1 overflow-y-auto pt-3 sm:pt-4 grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3.5 pr-0.5">
           {filteredItems.map((item) => (
             <button
               key={item._id}
@@ -356,7 +337,7 @@ export const PosView: React.FC = () => {
                   staffName: staffList[0]?.displayName,
                 })
               }
-              className="p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-500 hover:bg-amber-50/30 flex flex-col justify-between text-left transition-all active:scale-[0.98] group relative overflow-hidden shadow-sm"
+              className="p-3 sm:p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-500 hover:bg-amber-50/30 flex flex-col justify-between text-left transition-all active:scale-[0.98] group relative overflow-hidden shadow-sm min-h-[110px]"
             >
               <div>
                 <div className="text-xs font-bold text-slate-900 group-hover:text-brand-700 transition-colors line-clamp-2">
@@ -377,11 +358,11 @@ export const PosView: React.FC = () => {
                   )}
                 </div>
               </div>
-              <div className="flex items-center justify-between mt-4 pt-2 border-t border-slate-200">
+              <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-200">
                 <span className="font-extrabold text-sm text-slate-900">
                   ₹{activeTab === 'SERVICES' ? (item.effectivePrice || item.basePrice) : item.retailPrice}
                 </span>
-                <span className="p-1.5 rounded-lg bg-brand-50 text-brand-700 group-hover:bg-brand-500 group-hover:text-slate-950 transition-colors">
+                <span className="p-1 sm:p-1.5 rounded-lg bg-brand-50 text-brand-700 group-hover:bg-brand-500 group-hover:text-slate-950 transition-colors">
                   <Plus className="w-3.5 h-3.5" />
                 </span>
               </div>
@@ -391,12 +372,27 @@ export const PosView: React.FC = () => {
       </div>
 
       {/* Right: Real-time Cart & Checkout Panel */}
-      <div className="w-96 glass-card p-5 flex flex-col justify-between shrink-0 bg-white border-slate-200/80 shadow-sm">
+      <div id="pos-cart-section" className="w-full xl:w-96 glass-card p-4 sm:p-5 flex flex-col justify-between shrink-0 bg-white border-slate-200/80 shadow-sm scroll-mt-20">
         <div>
+          {/* Cart Header */}
+          <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4 text-brand-600" /> Current Bill ({items.length})
+            </h3>
+            {items.length > 0 && (
+              <button
+                onClick={clearCart}
+                className="text-[11px] text-slate-400 hover:text-rose-600 font-semibold transition-colors"
+              >
+                Clear All
+              </button>
+            )}
+          </div>
+
           {/* Customer Selection Banner */}
-          <div className="pb-4 border-b border-slate-200">
+          <div className="pb-3 border-b border-slate-200">
             {customer ? (
-              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between">
+              <div className="p-2.5 sm:p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between">
                 <div>
                   <div className="font-bold text-xs text-amber-900">{customer.fullName}</div>
                   <div className="text-[11px] text-slate-600">{customer.phone}</div>
@@ -404,6 +400,7 @@ export const PosView: React.FC = () => {
                 <button
                   onClick={() => setCustomer(null)}
                   className="text-xs text-slate-400 hover:text-rose-600 p-1"
+                  aria-label="Remove customer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -411,7 +408,7 @@ export const PosView: React.FC = () => {
             ) : (
               <button
                 onClick={() => setShowCustomerModal(true)}
-                className="w-full py-2.5 px-3 rounded-xl border border-dashed border-slate-300 hover:border-brand-500 bg-slate-50 text-xs font-semibold text-brand-700 hover:text-brand-800 flex items-center justify-center gap-2 transition-colors shadow-sm"
+                className="w-full py-2 sm:py-2.5 px-3 rounded-xl border border-dashed border-slate-300 hover:border-brand-500 bg-slate-50 text-xs font-semibold text-brand-700 hover:text-brand-800 flex items-center justify-center gap-2 transition-colors shadow-sm"
               >
                 <User className="w-4 h-4" /> + Attach Customer (Required)
               </button>
@@ -419,17 +416,20 @@ export const PosView: React.FC = () => {
           </div>
 
           {/* Cart Items List */}
-          <div className="py-3 max-h-60 overflow-y-auto space-y-2 pr-1">
+          <div className="py-2.5 max-h-52 sm:max-h-60 overflow-y-auto space-y-2 pr-1">
             {items.length === 0 ? (
-              <div className="text-center py-8 text-slate-400 text-xs">Cart is empty. Tap items on left to add.</div>
+              <div className="text-center py-6 sm:py-8 text-slate-400 text-xs">
+                Cart is empty. Tap services or products on left to add.
+              </div>
             ) : (
               items.map((item) => (
-                <div key={item.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs shadow-sm">
+                <div key={item.id} className="p-2 sm:p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs shadow-sm">
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-slate-800 line-clamp-1">{item.name}</span>
                     <button
                       onClick={() => removeItem(item.id)}
                       className="text-slate-400 hover:text-rose-600 ml-2"
+                      aria-label="Remove item"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -459,7 +459,7 @@ export const PosView: React.FC = () => {
         </div>
 
         {/* Bill Breakdown & Pay Button */}
-        <div className="pt-4 border-t border-slate-200 space-y-2 text-xs">
+        <div className="pt-3 sm:pt-4 border-t border-slate-200 space-y-1.5 sm:space-y-2 text-xs">
           <div className="flex justify-between text-slate-500">
             <span>Subtotal</span>
             <span className="text-slate-800 font-medium">₹{subtotal.toLocaleString('en-IN')}</span>
@@ -485,25 +485,53 @@ export const PosView: React.FC = () => {
             <span className="text-slate-800 font-medium">₹{Math.round(taxAmount).toLocaleString('en-IN')}</span>
           </div>
 
-          <div className="flex justify-between items-center pt-3 border-t border-slate-200">
+          <div className="flex justify-between items-center pt-2.5 sm:pt-3 border-t border-slate-200">
             <span className="text-sm font-bold text-slate-900">Grand Total</span>
-            <span className="text-xl font-black text-brand-700">₹{grandTotal.toLocaleString('en-IN')}</span>
+            <span className="text-lg sm:text-xl font-black text-brand-700">₹{grandTotal.toLocaleString('en-IN')}</span>
           </div>
 
           <button
             disabled={items.length === 0}
             onClick={() => setShowCheckoutModal(true)}
-            className="btn-gold w-full py-3 mt-2 font-extrabold text-sm shadow-sm"
+            className="btn-gold w-full py-2.5 sm:py-3 mt-1.5 sm:mt-2 font-extrabold text-xs sm:text-sm shadow-sm"
           >
             <CreditCard className="w-4 h-4" /> Collect Payment & Bill
           </button>
         </div>
       </div>
 
+      {/* Floating Cart Quick Bar for Mobile & Tablet (< xl) */}
+      {items.length > 0 && (
+        <div className="xl:hidden fixed bottom-16 sm:bottom-18 left-3 right-3 sm:left-6 sm:right-6 z-20 bg-slate-900/95 text-white p-3 sm:p-3.5 rounded-2xl shadow-2xl flex items-center justify-between backdrop-blur-md border border-slate-800 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-brand-500 text-slate-950 font-black flex items-center justify-center text-xs shrink-0 shadow-sm">
+              {items.length}
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-white truncate">
+                Bill: ₹{grandTotal.toLocaleString('en-IN')}
+              </div>
+              <div className="text-[10px] text-slate-400 truncate">
+                {customer ? customer.fullName : 'Customer pending'}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              const cartEl = document.getElementById('pos-cart-section');
+              if (cartEl) cartEl.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="btn-gold text-xs px-3.5 py-1.5 sm:py-2 font-bold shrink-0 ml-2"
+          >
+            Review & Pay
+          </button>
+        </div>
+      )}
+
       {/* Attach Customer Modal */}
       {showCustomerModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full glass-card p-6 bg-white border-slate-200 shadow-xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="max-w-md w-full glass-card p-5 sm:p-6 bg-white border-slate-200 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <User className="w-4 h-4 text-brand-600" /> Select / Search Customer
@@ -558,8 +586,8 @@ export const PosView: React.FC = () => {
 
       {/* Checkout & Split Payment Modal */}
       {showCheckoutModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full glass-card p-6 bg-white border-slate-200 shadow-xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="max-w-md w-full glass-card p-5 sm:p-6 bg-white border-slate-200 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <CreditCard className="w-4 h-4 text-brand-600" /> Payment & Receipt Generation
@@ -571,18 +599,18 @@ export const PosView: React.FC = () => {
 
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center mb-5">
               <div className="text-xs text-slate-500">Total Amount to Collect</div>
-              <div className="text-3xl font-black text-brand-700 mt-1">₹{grandTotal.toLocaleString('en-IN')}</div>
+              <div className="text-2xl sm:text-3xl font-black text-brand-700 mt-1">₹{grandTotal.toLocaleString('en-IN')}</div>
               <div className="text-xs text-slate-500 mt-1">Customer: {customer?.fullName}</div>
             </div>
 
             <div className="space-y-3 mb-6">
               <label className="block text-xs font-semibold text-slate-700">Choose Payment Method</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {(['UPI', 'CASH', 'CARD', 'WALLET', 'SPLIT'] as const).map((method) => (
                   <button
                     key={method}
                     onClick={() => setPaymentMethod(method)}
-                    className={`p-3 rounded-xl border text-xs font-bold transition-all ${
+                    className={`p-2.5 sm:p-3 rounded-xl border text-xs font-bold transition-all ${
                       paymentMethod === method
                         ? 'bg-brand-500 text-slate-950 border-brand-500 shadow-sm'
                         : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
@@ -597,7 +625,7 @@ export const PosView: React.FC = () => {
             <button
               onClick={handleCheckout}
               disabled={isProcessing}
-              className="btn-gold w-full py-3 font-extrabold text-sm shadow-sm"
+              className="btn-gold w-full py-3 font-extrabold text-xs sm:text-sm shadow-sm"
             >
               {isProcessing ? 'Processing Transaction...' : 'Confirm Payment & Print Receipt'}
             </button>
@@ -607,15 +635,15 @@ export const PosView: React.FC = () => {
 
       {/* Invoice Generated Modal */}
       {completedInvoice && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full glass-card p-6 bg-white border-slate-200 text-center shadow-xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="max-w-md w-full glass-card p-5 sm:p-6 bg-white border-slate-200 text-center shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto mb-3">
               <CheckCircle2 className="w-6 h-6" />
             </div>
             <h3 className="text-base font-extrabold text-slate-900">Invoice Generated</h3>
             <p className="text-xs text-slate-500 mt-1">Invoice #{completedInvoice.invoiceNumber}</p>
 
-            <div className="my-5 p-4 rounded-xl bg-slate-50 border border-slate-200 text-left text-xs space-y-2">
+            <div className="my-4 sm:my-5 p-4 rounded-xl bg-slate-50 border border-slate-200 text-left text-xs space-y-2">
               <div className="flex justify-between">
                 <span className="text-slate-500">Client:</span>
                 <span className="text-slate-900 font-bold">{completedInvoice.customerName}</span>

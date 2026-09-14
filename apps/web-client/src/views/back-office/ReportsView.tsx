@@ -23,43 +23,43 @@ export const ReportsView: React.FC = () => {
   }, [activeBranchId]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between glass-card p-5">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 glass-card p-4 sm:p-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0">
             <Layers className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">Financial & Business Analytics Reports</h2>
+            <h2 className="text-base sm:text-lg font-extrabold text-slate-900">Financial & Business Analytics Reports</h2>
             <p className="text-xs text-slate-500">Monthly sales summaries, GST tax compliance, and staff productivity reports</p>
           </div>
         </div>
 
-        <button onClick={() => window.print()} className="btn-secondary text-xs font-semibold px-4 py-2">
+        <button onClick={() => window.print()} className="btn-secondary text-xs font-semibold px-3 sm:px-4 py-2 flex items-center justify-center gap-1.5 shrink-0">
           <Download className="w-4 h-4" /> Export Report (PDF/Print)
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-card p-6 border-slate-200 bg-white shadow-sm">
-          <h3 className="text-sm font-bold text-slate-900 mb-2">Total Gross Invoiced</h3>
-          <div className="text-2xl font-black text-brand-600">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+        <div className="glass-card p-4 sm:p-6 border-slate-200 bg-white shadow-sm">
+          <h3 className="text-sm font-bold text-slate-900 mb-1.5 sm:mb-2">Total Gross Invoiced</h3>
+          <div className="text-xl sm:text-2xl font-black text-brand-600">
             ₹{data?.metrics?.totalRevenue?.toLocaleString('en-IN') || 0}
           </div>
           <p className="text-[11px] text-slate-500 mt-1">100% Collected & Reconciled</p>
         </div>
 
-        <div className="glass-card p-6 border-slate-200 bg-white shadow-sm">
-          <h3 className="text-sm font-bold text-slate-900 mb-2">Estimated GST Tax (18%)</h3>
-          <div className="text-2xl font-black text-sky-600">
+        <div className="glass-card p-4 sm:p-6 border-slate-200 bg-white shadow-sm">
+          <h3 className="text-sm font-bold text-slate-900 mb-1.5 sm:mb-2">Estimated GST Tax (18%)</h3>
+          <div className="text-xl sm:text-2xl font-black text-sky-600">
             ₹{Math.round((data?.metrics?.totalRevenue || 0) * 0.1525).toLocaleString('en-IN')}
           </div>
           <p className="text-[11px] text-slate-500 mt-1">Split into 9% CGST + 9% SGST</p>
         </div>
 
-        <div className="glass-card p-6 border-slate-200 bg-white shadow-sm">
-          <h3 className="text-sm font-bold text-slate-900 mb-2">Net Salon Profit</h3>
-          <div className="text-2xl font-black text-emerald-600">
+        <div className="glass-card p-4 sm:p-6 border-slate-200 bg-white shadow-sm">
+          <h3 className="text-sm font-bold text-slate-900 mb-1.5 sm:mb-2">Net Salon Profit</h3>
+          <div className="text-xl sm:text-2xl font-black text-emerald-600">
             ₹{(data?.metrics?.totalRevenue - (data?.metrics?.todayExpenseTotal || 0)).toLocaleString('en-IN')}
           </div>
           <p className="text-[11px] text-slate-500 mt-1">Operating yield before tax</p>

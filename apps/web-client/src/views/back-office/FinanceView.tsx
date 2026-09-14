@@ -52,63 +52,71 @@ export const FinanceView: React.FC = () => {
   const totalExpenseAmount = expenses.reduce((acc, exp) => acc + (exp.amount || 0), 0);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 glass-card p-5">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 glass-card p-4 sm:p-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
             <DollarSign className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">Expenses, Cash Flow & Financial Ledger</h2>
+            <h2 className="text-base sm:text-lg font-extrabold text-slate-900">Expenses, Cash Flow & Financial Ledger</h2>
             <p className="text-xs text-slate-500">Salon operating costs, vendor payments, rent, and utility deductions</p>
           </div>
         </div>
 
-        <button onClick={() => setShowModal(true)} className="btn-gold text-xs font-bold px-4 py-2 shadow-sm">
+        <button onClick={() => setShowModal(true)} className="btn-gold text-xs font-bold px-3 sm:px-4 py-2 shadow-sm shrink-0">
           <Plus className="w-4 h-4" /> Record Expense
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-card p-5 border-slate-200 bg-white shadow-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+        <div className="glass-card p-4 sm:p-5 border-slate-200 bg-white shadow-sm">
           <div className="text-xs font-semibold text-slate-500">TOTAL RECORDED EXPENSES</div>
-          <div className="text-2xl font-black text-rose-600 mt-1">₹{totalExpenseAmount.toLocaleString('en-IN')}</div>
+          <div className="text-xl sm:text-2xl font-black text-rose-600 mt-1">₹{totalExpenseAmount.toLocaleString('en-IN')}</div>
           <div className="text-[11px] text-slate-400 mt-0.5">{expenses.length} expense entries</div>
         </div>
       </div>
 
       <div className="glass-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700">
+          <table className="w-full text-left text-xs text-slate-700 min-w-[600px]">
             <thead className="bg-slate-50 text-slate-600 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
               <tr>
-                <th className="p-4">Expense Description</th>
-                <th className="p-4">Category</th>
-                <th className="p-4">Amount (INR)</th>
-                <th className="p-4">Payment Channel</th>
-                <th className="p-4">Date Recorded</th>
+                <th className="p-3 sm:p-4">Expense Description</th>
+                <th className="p-3 sm:p-4">Category</th>
+                <th className="p-3 sm:p-4">Amount (INR)</th>
+                <th className="p-3 sm:p-4">Payment Channel</th>
+                <th className="p-3 sm:p-4">Date Recorded</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {expenses.map((exp) => (
-                <tr key={exp._id} className="hover:bg-slate-50 transition-colors">
-                  <td className="p-4 font-bold text-slate-900 text-sm">{exp.title}</td>
-                  <td className="p-4">
-                    <span className="badge-gold text-[10px]">{exp.category}</span>
+              {expenses.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-slate-400">
+                    No operating expenses recorded yet.
                   </td>
-                  <td className="p-4 font-bold text-rose-600 font-mono text-sm">-₹{exp.amount?.toLocaleString('en-IN')}</td>
-                  <td className="p-4 text-slate-600">{exp.paidVia}</td>
-                  <td className="p-4 text-slate-500">{new Date(exp.expenseDate).toLocaleDateString()}</td>
                 </tr>
-              ))}
+              ) : (
+                expenses.map((exp) => (
+                  <tr key={exp._id || exp.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="p-3 sm:p-4 font-bold text-slate-900 text-sm">{exp.title}</td>
+                    <td className="p-3 sm:p-4">
+                      <span className="badge-gold text-[10px]">{exp.category}</span>
+                    </td>
+                    <td className="p-3 sm:p-4 font-bold text-rose-600 font-mono text-sm">-₹{exp.amount?.toLocaleString('en-IN')}</td>
+                    <td className="p-3 sm:p-4 text-slate-600">{exp.paidVia}</td>
+                    <td className="p-3 sm:p-4 text-slate-500 whitespace-nowrap">{new Date(exp.expenseDate).toLocaleDateString()}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full glass-card p-6 border-slate-200 bg-white shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="max-w-md w-full glass-card p-5 sm:p-6 border-slate-200 bg-white shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <h3 className="text-sm font-bold text-slate-900">Record Operating Expense</h3>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
@@ -129,7 +137,7 @@ export const FinanceView: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 font-semibold mb-1">Category</label>
                   <select

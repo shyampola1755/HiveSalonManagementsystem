@@ -49,31 +49,31 @@ export const MarketingView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between glass-card p-5">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 glass-card p-4 sm:p-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-600 flex items-center justify-center shrink-0">
             <Send className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">Marketing & Automated Client Retention</h2>
+            <h2 className="text-base sm:text-lg font-extrabold text-slate-900">Marketing & Automated Client Retention</h2>
             <p className="text-xs text-slate-500">WhatsApp & SMS broadcast campaigns, birthday reminders, and lapse triggers</p>
           </div>
         </div>
 
-        <button onClick={() => setShowModal(true)} className="btn-gold text-xs font-bold px-4 py-2 shadow-sm">
+        <button onClick={() => setShowModal(true)} className="btn-gold text-xs font-bold px-3 sm:px-4 py-2 shadow-sm shrink-0">
           <Plus className="w-4 h-4" /> New Broadcast Campaign
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {campaigns.length === 0 ? (
-          <div className="col-span-2 text-center py-12 glass-card text-slate-400 text-xs">
+          <div className="col-span-1 md:col-span-2 text-center py-12 glass-card text-slate-400 text-xs">
             No active marketing campaigns. Create one using the button above.
           </div>
         ) : (
           campaigns.map((c) => (
-            <div key={c._id} className="glass-card p-6 border-slate-200 bg-white flex flex-col justify-between shadow-sm">
+            <div key={c._id || c.id} className="glass-card p-4 sm:p-6 border-slate-200 bg-white flex flex-col justify-between shadow-sm">
               <div>
                 <div className="flex justify-between items-start">
                   <span className="badge-emerald text-[10px]">{c.type}</span>
@@ -86,7 +86,7 @@ export const MarketingView: React.FC = () => {
                 </p>
               </div>
 
-              <div className="mt-5 pt-3 border-t border-slate-100 flex justify-between text-xs text-slate-500">
+              <div className="mt-4 sm:mt-5 pt-3 border-t border-slate-100 flex justify-between text-xs text-slate-500">
                 <span>Sent: <strong className="text-slate-900">{c.sentCount || 120}</strong> recipients</span>
                 <span className="text-emerald-600 font-semibold">98.5% Delivery Rate</span>
               </div>
@@ -96,8 +96,8 @@ export const MarketingView: React.FC = () => {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full glass-card p-6 border-slate-200 bg-white shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="max-w-md w-full glass-card p-5 sm:p-6 border-slate-200 bg-white shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <h3 className="text-sm font-bold text-slate-900">Create Broadcast Campaign</h3>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
@@ -118,7 +118,7 @@ export const MarketingView: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 font-semibold mb-1">Channel</label>
                   <select

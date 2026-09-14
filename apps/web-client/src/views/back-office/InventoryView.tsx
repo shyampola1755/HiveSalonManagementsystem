@@ -208,15 +208,15 @@ export const InventoryView: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top Banner & Tab Navigation */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 glass-card p-5">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 glass-card p-4 sm:p-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-600 flex items-center justify-center shrink-0">
             <ShoppingBag className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">Centralized Inventory & Stock Requests</h2>
+            <h2 className="text-base sm:text-lg font-extrabold text-slate-900">Centralized Inventory & Stock Requests</h2>
             <p className="text-xs text-slate-500">
               Multi-branch supply chain, order requests, dispatch approvals & live POS stock
             </p>
@@ -224,7 +224,7 @@ export const InventoryView: React.FC = () => {
         </div>
 
         {/* Tab Switcher & Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex p-1 rounded-xl bg-slate-100 border border-slate-200">
             <button
               onClick={() => setActiveTab('CATALOG')}
@@ -259,8 +259,8 @@ export const InventoryView: React.FC = () => {
 
       {/* TAB 1: STOCK CATALOG VIEW */}
       {activeTab === 'CATALOG' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
             <div className="relative w-full sm:w-72">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
@@ -278,32 +278,32 @@ export const InventoryView: React.FC = () => {
 
           <div className="glass-card overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700">
+              <table className="w-full text-left text-xs text-slate-700 min-w-[700px]">
                 <thead className="bg-slate-50 text-slate-600 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
                   <tr>
-                    <th className="p-4">SKU</th>
-                    <th className="p-4">Product & Brand</th>
-                    <th className="p-4">Category</th>
-                    <th className="p-4">Cost Price</th>
-                    <th className="p-4">Retail Price</th>
-                    <th className="p-4">Branch Stock (POS Live)</th>
-                    <th className="p-4 text-right">Actions</th>
+                    <th className="p-3 sm:p-4">SKU</th>
+                    <th className="p-3 sm:p-4">Product & Brand</th>
+                    <th className="p-3 sm:p-4">Category</th>
+                    <th className="p-3 sm:p-4">Cost Price</th>
+                    <th className="p-3 sm:p-4">Retail Price</th>
+                    <th className="p-3 sm:p-4">Branch Stock (POS Live)</th>
+                    <th className="p-3 sm:p-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredProducts.map((p) => (
-                    <tr key={p._id} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-4 font-mono font-bold text-brand-600">{p.sku}</td>
-                      <td className="p-4">
+                    <tr key={p._id || p.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-3 sm:p-4 font-mono font-bold text-brand-600">{p.sku}</td>
+                      <td className="p-3 sm:p-4">
                         <div className="font-bold text-slate-900 text-sm">{p.name}</div>
                         <div className="text-[11px] text-slate-500 mt-0.5">{p.brand}</div>
                       </td>
-                      <td className="p-4">
+                      <td className="p-3 sm:p-4">
                         <span className="badge-sky text-[10px]">{p.categoryId?.name || 'Care'}</span>
                       </td>
-                      <td className="p-4 font-mono text-slate-600">₹{p.costPrice}</td>
-                      <td className="p-4 font-bold text-slate-900">₹{p.retailPrice}</td>
-                      <td className="p-4">
+                      <td className="p-3 sm:p-4 font-mono text-slate-600">₹{p.costPrice}</td>
+                      <td className="p-3 sm:p-4 font-bold text-slate-900">₹{p.retailPrice}</td>
+                      <td className="p-3 sm:p-4">
                         <div className="flex items-center gap-2">
                           <span
                             className={`font-extrabold text-sm ${
@@ -319,7 +319,7 @@ export const InventoryView: React.FC = () => {
                           )}
                         </div>
                       </td>
-                      <td className="p-4 text-right">
+                      <td className="p-3 sm:p-4 text-right">
                         <button
                           onClick={() => {
                             setSelectedProduct(p);
@@ -348,159 +348,120 @@ export const InventoryView: React.FC = () => {
                 <Truck className="w-4 h-4 text-brand-600" />
                 <h3 className="text-sm font-bold text-slate-900">Branch Order Requests & Stock Shipments</h3>
               </div>
-              <span className="text-xs text-slate-500">
-                {orders.length} total requests logged
+              <span className="text-xs text-slate-500 font-medium">
+                {orders.length} total orders recorded
               </span>
             </div>
 
-            {orders.length === 0 ? (
-              <div className="p-12 text-center text-slate-400">
-                <PackageCheck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-sm font-semibold text-slate-800">No inventory requests found</p>
-                <p className="text-xs text-slate-500 mt-1">
-                  Branch managers can click "+ Request Inventory" to order stock from central management.
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-700">
-                  <thead className="bg-slate-50 text-slate-600 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-700 min-w-[700px]">
+                <thead className="bg-slate-50 text-slate-600 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
+                  <tr>
+                    <th className="p-3 sm:p-4">Order #</th>
+                    <th className="p-3 sm:p-4">Branch</th>
+                    <th className="p-3 sm:p-4">Requested Items</th>
+                    <th className="p-3 sm:p-4">Status</th>
+                    <th className="p-3 sm:p-4">Date</th>
+                    <th className="p-3 sm:p-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {orders.length === 0 ? (
                     <tr>
-                      <th className="p-4">Order #</th>
-                      <th className="p-4">Branch</th>
-                      <th className="p-4">Requested By</th>
-                      <th className="p-4">Items & Quantities</th>
-                      <th className="p-4">Status</th>
-                      <th className="p-4">Timestamps & Notes</th>
-                      <th className="p-4 text-right">Workflow Action</th>
+                      <td colSpan={6} className="p-8 text-center text-slate-400">
+                        No inventory orders placed yet. Click "Request Inventory" to create one.
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {orders.map((ord) => (
-                      <tr key={ord._id} className="hover:bg-slate-50 transition-colors">
-                        <td className="p-4 font-mono font-bold text-brand-600">
-                          {ord.orderNumber}
-                        </td>
-                        <td className="p-4 font-semibold text-slate-900">
-                          <div className="flex items-center gap-1.5">
-                            <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                            {ord.branchName || ord.branchId?.name || 'Branch'}
+                  ) : (
+                    orders.map((o) => (
+                      <tr key={o._id || o.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-3 sm:p-4 font-mono font-bold text-brand-700">{o.orderNumber}</td>
+                        <td className="p-3 sm:p-4 font-bold text-slate-900">{o.branchName || 'Branch'}</td>
+                        <td className="p-3 sm:p-4">
+                          <div className="line-clamp-1 text-slate-800">
+                            {o.items?.map((it: any) => `${it.productName} (${it.requestedQuantity})`).join(', ')}
                           </div>
                         </td>
-                        <td className="p-4 text-slate-600">
-                          {ord.requestedByUserName}
+                        <td className="p-3 sm:p-4">
+                          <span
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                              o.status === 'COMPLETED' || o.status === 'DELIVERED'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : o.status === 'DISPATCHED'
+                                ? 'bg-sky-50 text-sky-700 border border-sky-200'
+                                : o.status === 'REJECTED'
+                                ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                : 'bg-amber-50 text-amber-700 border border-amber-200'
+                            }`}
+                          >
+                            {o.status}
+                          </span>
                         </td>
-                        <td className="p-4">
-                          <div className="space-y-1">
-                            {ord.items.map((it: any, idx: number) => (
-                              <div key={idx} className="flex items-center justify-between gap-3 text-[11px]">
-                                <span className="text-slate-800 font-medium">{it.productName}</span>
-                                <span className="font-mono font-bold text-brand-600">
-                                  {ord.status === 'RECEIVED'
-                                    ? `Recv: ${it.receivedQuantity || it.requestedQuantity} units`
-                                    : ord.status === 'DISPATCHED'
-                                    ? `Sent: ${it.dispatchedQuantity || it.requestedQuantity} units`
-                                    : `Req: ${it.requestedQuantity} units`}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          {ord.status === 'PENDING' && (
-                            <span className="badge-amber inline-flex items-center gap-1 text-[10px]">
-                              <Clock className="w-3 h-3" /> Pending Approval
-                            </span>
-                          )}
-                          {ord.status === 'DISPATCHED' && (
-                            <span className="badge-sky inline-flex items-center gap-1 text-[10px]">
-                              <Truck className="w-3 h-3 animate-pulse" /> Dispatched (In Transit)
-                            </span>
-                          )}
-                          {ord.status === 'RECEIVED' && (
-                            <span className="badge-emerald inline-flex items-center gap-1 text-[10px]">
-                              <CheckCircle2 className="w-3 h-3" /> Stock Received & Updated
-                            </span>
-                          )}
-                          {ord.status === 'REJECTED' && (
-                            <span className="badge-rose inline-flex items-center gap-1 text-[10px]">
-                              <XCircle className="w-3 h-3" /> Rejected
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-4 text-[11px] text-slate-500">
-                          <div>Created: {new Date(ord.createdAt).toLocaleDateString()}</div>
-                          {ord.notes && <div className="text-slate-700 mt-0.5">Note: "{ord.notes}"</div>}
-                          {ord.dispatchNotes && (
-                            <div className="text-brand-600 mt-0.5">Dispatch: "{ord.dispatchNotes}"</div>
-                          )}
-                        </td>
-                        <td className="p-4 text-right">
-                          {/* Super Admin Action: Accept & Dispatch */}
-                          {isSuperAdmin && ord.status === 'PENDING' && (
-                            <div className="flex items-center justify-end gap-2">
+                        <td className="p-3 sm:p-4 text-slate-500 whitespace-nowrap">{new Date(o.createdAt).toLocaleDateString()}</td>
+                        <td className="p-3 sm:p-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {isSuperAdmin && o.status === 'PENDING' && (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    setSelectedOrder(o);
+                                    setShowDispatchModal(true);
+                                  }}
+                                  className="btn-gold py-1 px-2.5 text-[11px] font-bold shadow-xs"
+                                >
+                                  Dispatch
+                                </button>
+                                <button
+                                  onClick={() => handleRejectOrder(o._id || o.id)}
+                                  className="p-1 rounded text-slate-400 hover:text-rose-600 transition-colors"
+                                  title="Reject order"
+                                >
+                                  <XCircle className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
+
+                            {!isSuperAdmin && o.status === 'DISPATCHED' && (
                               <button
                                 onClick={() => {
-                                  setSelectedOrder(ord);
-                                  setShowDispatchModal(true);
+                                  setSelectedOrder(o);
+                                  setShowReceiveModal(true);
                                 }}
-                                className="btn-gold py-1.5 px-3 text-xs font-bold flex items-center gap-1 shadow-sm"
+                                className="btn-gold py-1 px-2.5 text-[11px] font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950"
                               >
-                                <Send className="w-3.5 h-3.5" /> Accept & Dispatch
+                                Receive Shipment
                               </button>
-                              <button
-                                onClick={() => handleRejectOrder(ord._id)}
-                                className="btn-secondary py-1.5 px-2 text-xs text-rose-600 hover:bg-rose-50"
-                                title="Reject Request"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          )}
+                            )}
 
-                          {/* Branch Manager Action: Receive Shipment & Update Stock in MongoDB */}
-                          {ord.status === 'DISPATCHED' && (
-                            <button
-                              onClick={() => {
-                                setSelectedOrder(ord);
-                                setShowReceiveModal(true);
-                              }}
-                              className="btn-gold py-1.5 px-3 text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center gap-1.5 shadow-md shadow-emerald-500/20"
-                            >
-                              <PackageCheck className="w-3.5 h-3.5" /> Receive & Update Stock
-                            </button>
-                          )}
-
-                          {ord.status === 'RECEIVED' && (
-                            <span className="text-[11px] text-emerald-600 font-bold flex items-center justify-end gap-1">
-                              <CheckCircle2 className="w-3.5 h-3.5" /> Updated in POS
-                            </span>
-                          )}
-
-                          {!isSuperAdmin && ord.status === 'PENDING' && (
-                            <span className="text-[11px] text-amber-600 font-medium">
-                              Awaiting Super Admin
-                            </span>
-                          )}
+                            {(o.status === 'DELIVERED' || o.status === 'COMPLETED') && (
+                              <span className="text-emerald-700 font-semibold text-[11px] flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Stock Updated
+                              </span>
+                            )}
+                          </div>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
 
-      {/* MODAL 1: NEW INVENTORY ORDER REQUEST MODAL */}
+      {/* MODAL 1: NEW INVENTORY ORDER MODAL */}
       {showOrderModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-lg w-full glass-card p-6 border-slate-200 bg-white shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="max-w-lg w-full glass-card p-5 sm:p-6 border-slate-200 bg-white shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-              <div className="flex items-center gap-2">
-                <Truck className="w-4 h-4 text-brand-600" />
-                <h3 className="text-sm font-bold text-slate-900">Create Inventory Order Request</h3>
+              <div>
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Truck className="w-5 h-5 text-brand-600" /> Request Stock from Central Warehouse
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Creates an official requisition for chemical supplies & retail products
+                </p>
               </div>
               <button onClick={() => setShowOrderModal(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-4 h-4" />
@@ -509,15 +470,14 @@ export const InventoryView: React.FC = () => {
 
             <form onSubmit={handleCreateOrder} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Target Receiving Branch</label>
+                <label className="block text-slate-700 font-semibold mb-1">Destination Branch</label>
                 <select
                   value={orderBranchId}
                   onChange={(e) => setOrderBranchId(e.target.value)}
-                  className="input-field bg-white"
-                  disabled={!isSuperAdmin && !!activeBranchId}
+                  className="input-field"
                 >
                   {branches.map((b) => (
-                    <option key={b._id} value={b._id}>
+                    <option key={b._id || b.id} value={b._id || b.id}>
                       {b.name} ({b.code})
                     </option>
                   ))}
@@ -526,33 +486,33 @@ export const InventoryView: React.FC = () => {
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-slate-700 font-semibold">Select Products & Quantities</label>
+                  <label className="font-semibold text-slate-700">Products & Quantities Requested</label>
                   <button
                     type="button"
                     onClick={() => setOrderItems([...orderItems, { productId: '', requestedQuantity: 5 }])}
-                    className="text-brand-600 font-bold hover:underline flex items-center gap-1 text-[11px]"
+                    className="text-brand-600 hover:text-brand-700 font-bold text-xs flex items-center gap-1"
                   >
-                    <Plus className="w-3 h-3" /> Add Product
+                    <Plus className="w-3.5 h-3.5" /> Add Another Item
                   </button>
                 </div>
 
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                <div className="space-y-2.5 max-h-48 overflow-y-auto p-1 bg-slate-50 rounded-xl border border-slate-200/80">
                   {orderItems.map((item, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <select
+                        required
                         value={item.productId}
                         onChange={(e) => {
                           const updated = [...orderItems];
                           updated[idx].productId = e.target.value;
                           setOrderItems(updated);
                         }}
-                        className="input-field flex-1 text-xs bg-white"
-                        required
+                        className="input-field flex-1 text-xs py-1.5"
                       >
-                        <option value="">-- Select Product --</option>
+                        <option value="">-- Choose Product --</option>
                         {products.map((p) => (
-                          <option key={p._id} value={p._id}>
-                            {p.name} ({p.brand}) - Current Stock: {p.currentQuantity}
+                          <option key={p._id || p.id} value={p._id || p.id}>
+                            {p.name} ({p.sku}) — Curr: {p.currentQuantity}
                           </option>
                         ))}
                       </select>
@@ -560,22 +520,22 @@ export const InventoryView: React.FC = () => {
                       <input
                         type="number"
                         min="1"
+                        required
                         value={item.requestedQuantity}
                         onChange={(e) => {
                           const updated = [...orderItems];
                           updated[idx].requestedQuantity = Number(e.target.value);
                           setOrderItems(updated);
                         }}
-                        className="input-field w-20 text-center font-bold text-xs"
+                        className="input-field w-20 text-xs py-1.5"
                         placeholder="Qty"
-                        required
                       />
 
                       {orderItems.length > 1 && (
                         <button
                           type="button"
                           onClick={() => setOrderItems(orderItems.filter((_, i) => i !== idx))}
-                          className="p-2 text-rose-500 hover:text-rose-700"
+                          className="p-1.5 text-slate-400 hover:text-rose-600"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -586,12 +546,13 @@ export const InventoryView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Request Notes</label>
+                <label className="block text-slate-700 font-semibold mb-1">Requisition Notes (Optional)</label>
                 <textarea
+                  rows={2}
                   value={orderNotes}
                   onChange={(e) => setOrderNotes(e.target.value)}
-                  placeholder="e.g. Urgent stock replenishment for weekend appointments"
-                  className="input-field resize-none h-16"
+                  placeholder="e.g. Urgent weekend color batch requirement"
+                  className="input-field py-2"
                 />
               </div>
 
@@ -609,8 +570,8 @@ export const InventoryView: React.FC = () => {
 
       {/* MODAL 2: SUPER ADMIN DISPATCH MODAL */}
       {showDispatchModal && selectedOrder && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full glass-card p-6 border-slate-200 bg-white shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="max-w-md w-full glass-card p-5 sm:p-6 border-slate-200 bg-white shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <h3 className="text-sm font-bold text-slate-900">Accept & Dispatch Inventory</h3>
               <button onClick={() => setShowDispatchModal(false)} className="text-slate-400 hover:text-slate-600">
@@ -629,7 +590,7 @@ export const InventoryView: React.FC = () => {
               </div>
               <div className="pt-2 border-t border-slate-200">
                 <div className="text-slate-500 mb-1 font-semibold">Items to Dispatch:</div>
-                {selectedOrder.items.map((it: any, i: number) => (
+                {selectedOrder.items?.map((it: any, i: number) => (
                   <div key={i} className="flex justify-between text-slate-700">
                     <span>{it.productName}</span>
                     <span className="font-bold text-slate-900">{it.requestedQuantity} units</span>
@@ -663,8 +624,8 @@ export const InventoryView: React.FC = () => {
 
       {/* MODAL 3: BRANCH MANAGER RECEIVE SHIPMENT MODAL */}
       {showReceiveModal && selectedOrder && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full glass-card p-6 border-slate-200 bg-white shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="max-w-md w-full glass-card p-5 sm:p-6 border-slate-200 bg-white shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <div className="flex items-center gap-2 text-emerald-600">
                 <PackageCheck className="w-4 h-4" />
@@ -686,7 +647,7 @@ export const InventoryView: React.FC = () => {
               </div>
               <div className="pt-2 border-t border-slate-200">
                 <div className="text-slate-500 mb-1 font-semibold">Incoming Stock to be Added:</div>
-                {selectedOrder.items.map((it: any, i: number) => (
+                {selectedOrder.items?.map((it: any, i: number) => (
                   <div key={i} className="flex justify-between text-slate-700 py-0.5">
                     <span>{it.productName}</span>
                     <span className="font-bold text-emerald-600">+{it.dispatchedQuantity || it.requestedQuantity} units</span>
@@ -720,8 +681,8 @@ export const InventoryView: React.FC = () => {
 
       {/* Stock Adjustment Modal */}
       {showAdjustModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-sm w-full glass-card p-6 border-slate-200 bg-white shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="max-w-sm w-full glass-card p-5 sm:p-6 border-slate-200 bg-white shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <h3 className="text-sm font-bold text-slate-900">Adjust Stock Count</h3>
               <button onClick={() => setShowAdjustModal(false)} className="text-slate-400 hover:text-slate-600">

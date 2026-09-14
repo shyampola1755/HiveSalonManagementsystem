@@ -128,32 +128,32 @@ export const TeamView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 glass-card p-5">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 glass-card p-4 sm:p-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0">
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">Staff Roster, Stylists & Attendance</h2>
+            <h2 className="text-base sm:text-lg font-extrabold text-slate-900">Staff Roster, Stylists & Attendance</h2>
             <p className="text-xs text-slate-500">
               Employee profiles, branch login credentials, commission structures, and attendance
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <button
             onClick={() => setShowAddModal(true)}
-            className="btn-gold text-xs font-bold px-4 py-2 flex items-center gap-2"
+            className="btn-gold text-xs font-bold px-3 sm:px-4 py-2 flex items-center gap-1.5 shadow-sm"
           >
-            <Plus className="w-4 h-4" /> Add Staff / Branch Login
+            <Plus className="w-4 h-4" /> Add Staff / Login
           </button>
 
           <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
             <button
               onClick={() => setActiveTab('DIRECTORY')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === 'DIRECTORY' ? 'bg-brand-500 text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -161,43 +161,43 @@ export const TeamView: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('ATTENDANCE')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === 'ATTENDANCE' ? 'bg-brand-500 text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Today's Attendance Logs
+              Attendance Logs
             </button>
           </div>
         </div>
       </div>
 
       {activeTab === 'DIRECTORY' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {staff.map((member) => (
-            <div key={member._id} className="glass-card p-6 border-slate-200 bg-white flex flex-col justify-between shadow-sm">
+            <div key={member._id || member.id} className="glass-card p-4 sm:p-6 border-slate-200 bg-white flex flex-col justify-between shadow-sm">
               <div>
                 <div className="flex justify-between items-start">
                   <span className="badge-gold text-[10px] font-mono">{member.employeeCode}</span>
                   <span className="badge-emerald text-[10px]">{member.staffType}</span>
                 </div>
 
-                <div className="mt-4 flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-brand-400 to-amber-500 flex items-center justify-center font-bold text-slate-950 text-base shadow-sm">
+                <div className="mt-3 sm:mt-4 flex items-center gap-3">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-brand-400 to-amber-500 flex items-center justify-center font-bold text-slate-950 text-sm sm:text-base shadow-sm shrink-0">
                     {member.displayName?.charAt(0) || 'S'}
                   </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-slate-900">{member.displayName}</h3>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-sm text-slate-900 truncate">{member.displayName}</h3>
                     <p className="text-xs text-brand-600 font-semibold">{member.jobTitle}</p>
                     {member.userId?.email && (
-                      <p className="text-[11px] text-slate-500 mt-0.5">{member.userId.email}</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5 truncate">{member.userId.email}</p>
                     )}
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5 text-xs text-slate-700">
+                <div className="mt-3 sm:mt-4 pt-3 border-t border-slate-100 space-y-1.5 text-xs text-slate-700">
                   <div className="flex justify-between">
                     <span className="text-slate-500">Assigned Branch:</span>
-                    <span className="font-bold text-brand-600">
+                    <span className="font-bold text-brand-600 truncate max-w-[140px] text-right">
                       {member.primaryBranchId?.name || 'All Branches'}
                     </span>
                   </div>
@@ -218,8 +218,8 @@ export const TeamView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 text-emerald-600 font-semibold">
+              <div className="mt-4 sm:mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1.5 text-emerald-600 font-semibold text-[11px]">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Active Login Ready
                 </span>
                 <span className="text-slate-500 font-mono text-[11px]">{member.primaryBranchId?.code || 'HQ'}</span>
@@ -230,15 +230,15 @@ export const TeamView: React.FC = () => {
       ) : (
         <div className="glass-card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700">
+            <table className="w-full text-left text-xs text-slate-700 min-w-[600px]">
               <thead className="bg-slate-50 text-slate-600 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
                 <tr>
-                  <th className="p-4">Staff Member</th>
-                  <th className="p-4">Employee ID</th>
-                  <th className="p-4">Check-in Time</th>
-                  <th className="p-4">Check-out Time</th>
-                  <th className="p-4">Total Working Hours</th>
-                  <th className="p-4">Status</th>
+                  <th className="p-3 sm:p-4">Staff Member</th>
+                  <th className="p-3 sm:p-4">Employee ID</th>
+                  <th className="p-3 sm:p-4">Check-in Time</th>
+                  <th className="p-3 sm:p-4">Check-out Time</th>
+                  <th className="p-3 sm:p-4">Total Working Hours</th>
+                  <th className="p-3 sm:p-4">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -250,17 +250,17 @@ export const TeamView: React.FC = () => {
                   </tr>
                 ) : (
                   attendance.map((rec) => (
-                    <tr key={rec._id} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-4 font-bold text-slate-900">{rec.staffId?.displayName}</td>
-                      <td className="p-4 font-mono text-slate-500">{rec.staffId?.employeeCode}</td>
-                      <td className="p-4 text-emerald-600 font-mono font-medium">
+                    <tr key={rec._id || rec.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-3 sm:p-4 font-bold text-slate-900">{rec.staffId?.displayName}</td>
+                      <td className="p-3 sm:p-4 font-mono text-slate-500">{rec.staffId?.employeeCode}</td>
+                      <td className="p-3 sm:p-4 text-emerald-600 font-mono font-medium">
                         {rec.checkInTime ? new Date(rec.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
                       </td>
-                      <td className="p-4 text-slate-500 font-mono">
+                      <td className="p-3 sm:p-4 text-slate-500 font-mono">
                         {rec.checkOutTime ? new Date(rec.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'On Floor'}
                       </td>
-                      <td className="p-4 font-bold text-slate-900">{rec.totalWorkingHours || 'Active'} hrs</td>
-                      <td className="p-4">
+                      <td className="p-3 sm:p-4 font-bold text-slate-900">{rec.totalWorkingHours || 'Active'} hrs</td>
+                      <td className="p-3 sm:p-4">
                         <span className="badge-emerald text-[10px]">{rec.status}</span>
                       </td>
                     </tr>
@@ -274,8 +274,8 @@ export const TeamView: React.FC = () => {
 
       {/* Add Staff / Branch Login Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-lg w-full glass-card p-6 border-slate-200 bg-white max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="max-w-lg w-full glass-card p-5 sm:p-6 border-slate-200 bg-white max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <div>
                 <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -290,7 +290,7 @@ export const TeamView: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleCreateStaff} className="space-y-4 text-xs">
+            <form onSubmit={handleCreateStaff} className="space-y-3.5 text-xs">
               <div>
                 <label className="block text-slate-700 font-semibold mb-1">Full Name *</label>
                 <input
@@ -319,68 +319,66 @@ export const TeamView: React.FC = () => {
                 <div>
                   <label className="block text-slate-700 font-semibold mb-1">Password *</label>
                   <input
-                    type="text"
+                    type="password"
                     required
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     placeholder="Password123!"
-                    className="input-field font-mono"
+                    className="input-field"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Assign to Branch *</label>
-                  <select
-                    value={formData.primaryBranchId}
-                    onChange={(e) => setFormData({ ...formData, primaryBranchId: e.target.value })}
-                    className="input-field font-medium bg-white"
-                  >
-                    {branches.map((b) => {
-                      const bId = String(b.id || (b as any)._id);
-                      return (
-                        <option key={bId} value={bId}>
-                          {b.name} ({b.code})
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">System Role *</label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => handleRoleChange(e.target.value)}
-                    className="input-field font-medium bg-white"
-                  >
-                    <option value="BRANCH_MANAGER">Branch Manager (Floor Hub & Reports)</option>
-                    <option value="FRONT_DESK">Front Desk Coordinator (POS & Queue)</option>
-                    <option value="STYLIST">Senior Stylist (Chair & Formulas)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Job Title</label>
+                  <label className="block text-slate-700 font-semibold mb-1">Mobile Contact Phone *</label>
                   <input
-                    type="text"
+                    type="tel"
                     required
-                    value={formData.jobTitle}
-                    onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="+91 98765 00000"
                     className="input-field"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Phone Number</label>
+                  <label className="block text-slate-700 font-semibold mb-1">Login Role & Permissions *</label>
+                  <select
+                    value={formData.role}
+                    onChange={(e) => handleRoleChange(e.target.value)}
+                    className="input-field"
+                  >
+                    <option value="BRANCH_MANAGER">🏢 Branch Manager (Floor ERP Scoped)</option>
+                    <option value="FRONT_DESK">⚡ Front Desk Coordinator (POS & Queue)</option>
+                    <option value="STYLIST">✂️ Creative Stylist (Station & Calendar)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Primary Salon Branch *</label>
+                  <select
+                    value={formData.primaryBranchId}
+                    onChange={(e) => setFormData({ ...formData, primaryBranchId: e.target.value })}
+                    className="input-field"
+                  >
+                    {branches.map((b) => (
+                      <option key={b.id || (b as any)._id} value={String(b.id || (b as any)._id)}>
+                        {b.name} ({b.code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Job Designation Title</label>
                   <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+91 98765 00000"
+                    type="text"
+                    value={formData.jobTitle}
+                    onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
+                    placeholder="e.g. Master Balayage Director"
                     className="input-field"
                   />
                 </div>
@@ -400,11 +398,9 @@ export const TeamView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Monthly Target (₹)</label>
+                  <label className="block text-slate-700 font-semibold mb-1">Monthly Sales Target (INR)</label>
                   <input
                     type="number"
-                    min="0"
-                    step="1000"
                     value={formData.monthlyRevenueTarget}
                     onChange={(e) => setFormData({ ...formData, monthlyRevenueTarget: Number(e.target.value) })}
                     className="input-field"
@@ -412,12 +408,23 @@ export const TeamView: React.FC = () => {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">Specialization / Skills</label>
+                <input
+                  type="text"
+                  value={formData.specialization}
+                  onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
+                  placeholder="e.g. French Balayage, Keratin Treatments"
+                  className="input-field"
+                />
+              </div>
+
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="btn-gold w-full py-3 font-bold text-xs mt-2 shadow-md"
+                className="btn-gold w-full py-2.5 font-bold text-xs shadow-md mt-2"
               >
-                {isSubmitting ? 'Creating Profile & Login...' : 'Create Staff Member & Login Credentials'}
+                {isSubmitting ? 'Creating Employee Profile...' : 'Save & Provision Branch Account'}
               </button>
             </form>
           </div>

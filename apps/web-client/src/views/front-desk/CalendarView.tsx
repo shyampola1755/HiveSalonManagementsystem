@@ -117,7 +117,7 @@ export const CalendarView: React.FC = () => {
       setServicesList(getArray(svcRes));
       setCustomersList(getArray(custRes));
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching calendar data:', err);
     }
   };
 
@@ -125,104 +125,53 @@ export const CalendarView: React.FC = () => {
     fetchData();
   }, [selectedDate, activeBranchId]);
 
-  // Update default slot when modal opens or date changes
-  const handleOpenBookingModal = (defaultStaffId = '', defaultSlot = '') => {
-    const slotToUse = defaultSlot || (isSlotInPast(selectedDate, formData.startTime) ? getFirstAvailableSlot(selectedDate) : formData.startTime);
+  const handleDateChange = (newDate: string) => {
+    setSelectedDate(newDate);
+    const firstAvail = getFirstAvailableSlot(newDate);
     setFormData((prev) => ({
       ...prev,
-      staffId: defaultStaffId || prev.staffId,
-      startTime: slotToUse,
+      startTime: firstAvail,
     }));
-    setShowBookingModal(true);
   };
 
-  const handleDateChange = (newDate: string) => {
-    if (newDate < todayDateStr) {
-      showToast('Cannot view or schedule appointments for past dates.', 'warning');
-      setSelectedDate(todayDateStr);
-      return;
-    }
-    setSelectedDate(newDate);
-    // If current selected time in modal is in past for new date, update it
-    if (isSlotInPast(newDate, formData.startTime)) {
-      setFormData((prev) => ({ ...prev, startTime: getFirstAvailableSlot(newDate) }));
-    }
+  const handleOpenBookingModal = (defaultStaffId = '', defaultSlot = '') => {
+    const slotToUse = defaultSlot || getFirstAvailableSlot(selectedDate);
+    setFormData({
+      customerId: customersList[0]?._id || '',
+      serviceId: servicesList[0]?._id || '',
+      staffId: defaultStaffId,
+      startTime: slotToUse,
+      durationMinutes: servicesList[0]?.durationMinutes || 60,
+      notes: '',
+    });
+    setShowBookingModal(true);
   };
 
   const handleCreateAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 1. Validation: Prevent booking in the past
     if (isSlotInPast(selectedDate, formData.startTime)) {
-      showToast('Cannot schedule appointments in the past. Please select an upcoming date and time.', 'error');
+      showToast('Cannot book appointment in a past time slot.', 'error');
       return;
     }
 
-    if (!formData.customerId) {
-      showToast('Please select a customer.', 'error');
-      return;
-    }
-
-    if (!formData.serviceId) {
-      showToast('Please select a service.', 'error');
-      return;
-    }
-
-    // 2. Validation: Customer Concurrent / Overlapping Appointment Check
-    const [newH, newM] = formData.startTime.split(':').map(Number);
-    const newStartMin = newH * 60 + (newM || 0);
-    const newEndMin = newStartMin + (Number(formData.durationMinutes) || 60);
-
-    const selectedCustomer = customersList.find((c) => c._id === formData.customerId || c.id === formData.customerId);
-    const customerDisplayName = selectedCustomer?.fullName || 'Selected Client';
-
-    const customerConflict = appointments.find((a) => {
-      if (a.status === 'CANCELLED' || a.status === 'NO_SHOW') return false;
-
-      // Check date match
-      const apptDateStr = a.appointmentDate ? (typeof a.appointmentDate === 'string' ? a.appointmentDate.split('T')[0] : '') : selectedDate;
-      if (apptDateStr && apptDateStr !== selectedDate) return false;
-
-      const apptCustId = a.customerId?._id || a.customerId?.id || a.customerId;
-      const isSameCust = apptCustId === formData.customerId || (a.customerName && selectedCustomer && a.customerName.toLowerCase() === selectedCustomer.fullName.toLowerCase());
-      if (!isSameCust) return false;
-
-      const [aH, aM] = (a.startTime || '00:00').split(':').map(Number);
-      const aStartMin = aH * 60 + (aM || 0);
-      let aEndMin = aStartMin + (Number(a.durationMinutes) || 60);
-      if (a.endTime) {
-        const [eH, eM] = a.endTime.split(':').map(Number);
-        aEndMin = eH * 60 + (eM || 0);
-      }
-
-      // Overlap: newStart < aEnd && newEnd > aStart
-      return newStartMin < aEndMin && newEndMin > aStartMin;
-    });
-
-    if (customerConflict) {
-      showToast(
-        `Client ${customerDisplayName} already has an active appointment at ${formatTime12h(customerConflict.startTime)} with ${customerConflict.staffName || customerConflict.staffId?.displayName || 'a stylist'}. Concurrent appointments for the same client are not allowed.`,
-        'error'
-      );
-      return;
-    }
-
-    // 3. Stylist Resolution: Specific Stylist OR "Any Available Stylist"
     let assignedStaffId = formData.staffId;
     let assignedStaffDisplayName = '';
 
     if (assignedStaffId) {
-      const selectedStaff = staffList.find((s) => s._id === assignedStaffId || s.id === assignedStaffId);
-      assignedStaffDisplayName = selectedStaff?.displayName || 'Selected Stylist';
+      const [newH, newM] = formData.startTime.split(':').map(Number);
+      const newStartMin = newH * 60 + newM;
+      const newEndMin = newStartMin + Number(formData.durationMinutes);
 
-      const staffConflict = appointments.find((a) => {
+      const conflict = appointments.some((a) => {
         if (a.status === 'CANCELLED' || a.status === 'NO_SHOW') return false;
 
         const apptDateStr = a.appointmentDate ? (typeof a.appointmentDate === 'string' ? a.appointmentDate.split('T')[0] : '') : selectedDate;
         if (apptDateStr && apptDateStr !== selectedDate) return false;
 
         const apptStaffId = a.staffId?._id || a.staffId?.id || a.staffId;
-        const isSameStaff = apptStaffId === assignedStaffId || (a.staffName && selectedStaff && a.staffName.toLowerCase() === selectedStaff.displayName.toLowerCase());
+        const matchedStaff = staffList.find((s) => s._id === assignedStaffId);
+        const isSameStaff = apptStaffId === assignedStaffId || (matchedStaff && a.staffName && a.staffName.toLowerCase() === matchedStaff.displayName.toLowerCase());
         if (!isSameStaff) return false;
 
         const [aH, aM] = (a.startTime || '00:00').split(':').map(Number);
@@ -236,17 +185,17 @@ export const CalendarView: React.FC = () => {
         return newStartMin < aEndMin && newEndMin > aStartMin;
       });
 
-      if (staffConflict) {
-        showToast(
-          `Stylist ${assignedStaffDisplayName} is already booked at ${formatTime12h(staffConflict.startTime)} for another client (${staffConflict.customerName || 'Client'}). Please choose a different stylist or time slot.`,
-          'error'
-        );
+      if (conflict) {
+        showToast('Selected stylist is already booked during this time window. Please choose another stylist or time slot.', 'error');
         return;
       }
     } else {
-      // Auto-assign first free stylist for "Any Available Stylist"
+      const [newH, newM] = formData.startTime.split(':').map(Number);
+      const newStartMin = newH * 60 + newM;
+      const newEndMin = newStartMin + Number(formData.durationMinutes);
+
       const freeStaff = staffList.find((st) => {
-        const conflict = appointments.find((a) => {
+        const conflict = appointments.some((a) => {
           if (a.status === 'CANCELLED' || a.status === 'NO_SHOW') return false;
 
           const apptDateStr = a.appointmentDate ? (typeof a.appointmentDate === 'string' ? a.appointmentDate.split('T')[0] : '') : selectedDate;
@@ -313,15 +262,15 @@ export const CalendarView: React.FC = () => {
   const displayStaffList = staffList.slice(0, 5);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top Header & Date Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card p-5 bg-white border-slate-200/80 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 glass-card p-3.5 sm:p-5 bg-white border-slate-200/80 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 border border-brand-200/60 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 border border-brand-200/60 flex items-center justify-center shrink-0">
             <CalendarIcon className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">Appointments & Stylist Calendar</h2>
+            <h2 className="text-base sm:text-lg font-extrabold text-slate-900">Appointments & Stylist Calendar</h2>
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-xs text-slate-500">
                 Resource board for <span className="text-slate-900 font-semibold">{selectedDate}</span>
@@ -343,7 +292,7 @@ export const CalendarView: React.FC = () => {
           <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-1">
             <button
               onClick={() => handleDateChange(todayDateStr)}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+              className={`px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-md transition-all ${
                 selectedDate === todayDateStr
                   ? 'bg-brand-500 text-slate-950 font-bold shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
@@ -353,7 +302,7 @@ export const CalendarView: React.FC = () => {
             </button>
             <button
               onClick={() => handleDateChange(tomorrowDateStr)}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+              className={`px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-md transition-all ${
                 selectedDate === tomorrowDateStr
                   ? 'bg-brand-500 text-slate-950 font-bold shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
@@ -363,17 +312,17 @@ export const CalendarView: React.FC = () => {
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 w-full xs:w-auto">
             <input
               type="date"
               min={todayDateStr}
               value={selectedDate}
               onChange={(e) => handleDateChange(e.target.value)}
-              className="input-field py-1.5 px-3 text-xs w-auto cursor-pointer"
+              className="input-field py-1.5 px-2.5 text-xs w-auto cursor-pointer"
             />
             <button
               onClick={() => handleOpenBookingModal()}
-              className="btn-gold text-xs font-bold px-4 py-2 flex items-center gap-1.5 shadow-sm"
+              className="btn-gold text-xs font-bold px-3 sm:px-4 py-2 flex items-center gap-1.5 shadow-sm shrink-0 flex-1 xs:flex-none justify-center"
             >
               <Plus className="w-4 h-4" /> Book Appointment
             </button>
@@ -383,7 +332,7 @@ export const CalendarView: React.FC = () => {
 
       {/* Notice if all slots for today have passed */}
       {allSlotsPassedToday && (
-        <div className="glass-card p-4 border-amber-200 bg-amber-50 flex items-center justify-between gap-4 text-xs">
+        <div className="glass-card p-3 sm:p-4 border-amber-200 bg-amber-50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-amber-800">
             <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
             <span>Salon appointment hours for today have completed. Switch to tomorrow to schedule upcoming bookings.</span>
@@ -397,14 +346,14 @@ export const CalendarView: React.FC = () => {
         </div>
       )}
 
-      {/* Calendar Grid by Stylists */}
-      <div className="glass-card p-5 overflow-x-auto bg-white border-slate-200/80">
-        <div className="min-w-[850px]">
+      {/* Calendar Grid by Stylists with responsive horizontal scroll */}
+      <div className="glass-card p-3.5 sm:p-5 overflow-x-auto bg-white border-slate-200/80 shadow-sm">
+        <div className="min-w-[700px] md:min-w-[850px]">
           {/* Header Row: Stylists + Unassigned (if any) */}
           <div
-            className="grid gap-3 pb-3 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider"
+            className="grid gap-2.5 sm:gap-3 pb-3 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider"
             style={{
-              gridTemplateColumns: `130px repeat(${displayStaffList.length + (unassignedAppts.length > 0 ? 1 : 0)}, minmax(170px, 1fr))`,
+              gridTemplateColumns: `110px repeat(${displayStaffList.length + (unassignedAppts.length > 0 ? 1 : 0)}, minmax(140px, 1fr))`,
             }}
           >
             <div>Time Slot</div>
@@ -430,17 +379,17 @@ export const CalendarView: React.FC = () => {
               return (
                 <div
                   key={slot}
-                  className={`grid gap-3 py-3 items-center text-xs ${slotPassed ? 'opacity-60' : ''}`}
+                  className={`grid gap-2.5 sm:gap-3 py-2.5 sm:py-3 items-center text-xs ${slotPassed ? 'opacity-60' : ''}`}
                   style={{
-                    gridTemplateColumns: `130px repeat(${displayStaffList.length + (unassignedAppts.length > 0 ? 1 : 0)}, minmax(170px, 1fr))`,
+                    gridTemplateColumns: `110px repeat(${displayStaffList.length + (unassignedAppts.length > 0 ? 1 : 0)}, minmax(140px, 1fr))`,
                   }}
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <span className={`font-bold ${slotPassed ? 'text-slate-400' : 'text-slate-700'}`}>
                       {formatTime12h(slot)}
                     </span>
                     {slotPassed && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-medium">
+                      <span className="text-[8px] px-1 py-0.5 rounded bg-slate-100 text-slate-500 font-medium hidden sm:inline">
                         Passed
                       </span>
                     )}
@@ -459,7 +408,7 @@ export const CalendarView: React.FC = () => {
                       return (
                         <div
                           key={staff._id}
-                          className={`p-2.5 rounded-xl border min-h-[58px] flex flex-col justify-between transition-all ${
+                          className={`p-2 sm:p-2.5 rounded-xl border min-h-[56px] flex flex-col justify-between transition-all ${
                             slotPassed
                               ? 'bg-slate-50 border-slate-200 text-slate-500'
                               : 'bg-amber-50/80 border-amber-200 text-slate-800 shadow-sm'
@@ -491,7 +440,7 @@ export const CalendarView: React.FC = () => {
                       return (
                         <div
                           key={staff._id}
-                          className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/60 text-slate-400 min-h-[58px] flex flex-col justify-center items-center cursor-not-allowed select-none"
+                          className="p-2 sm:p-2.5 rounded-xl border border-slate-100 bg-slate-50/60 text-slate-400 min-h-[56px] flex flex-col justify-center items-center cursor-not-allowed select-none"
                         >
                           <span className="text-[10px] text-slate-400 italic">Slot Passed</span>
                         </div>
@@ -502,7 +451,7 @@ export const CalendarView: React.FC = () => {
                       <div
                         key={staff._id}
                         onClick={() => handleOpenBookingModal(staff._id, slot)}
-                        className="p-2.5 rounded-xl border border-dashed border-slate-200 hover:border-brand-500 bg-white hover:bg-brand-50/40 cursor-pointer text-slate-400 hover:text-brand-600 min-h-[58px] flex flex-col justify-center items-center transition-all group shadow-sm"
+                        className="p-2 sm:p-2.5 rounded-xl border border-dashed border-slate-200 hover:border-brand-500 bg-white hover:bg-brand-50/40 cursor-pointer text-slate-400 hover:text-brand-600 min-h-[56px] flex flex-col justify-center items-center transition-all group shadow-sm"
                       >
                         <span className="text-[10px] group-hover:font-bold flex items-center gap-1">
                           <Plus className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-brand-500" /> Available
@@ -516,7 +465,7 @@ export const CalendarView: React.FC = () => {
                     const unassignedSlotApp = unassignedAppts.find((a) => a.startTime?.startsWith(slot.split(':')[0]));
                     if (unassignedSlotApp) {
                       return (
-                        <div className="p-2.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 min-h-[58px] flex flex-col justify-between">
+                        <div className="p-2 sm:p-2.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 min-h-[56px] flex flex-col justify-between">
                           <div>
                             <div className="font-bold text-[11px] text-slate-900 line-clamp-1">{unassignedSlotApp.customerName}</div>
                             <div className="text-[10px] text-amber-700 line-clamp-1">{unassignedSlotApp.serviceName}</div>
@@ -526,7 +475,7 @@ export const CalendarView: React.FC = () => {
                       );
                     }
                     return (
-                      <div className="p-2.5 rounded-xl border border-slate-100 bg-slate-50 text-slate-400 min-h-[58px] flex items-center justify-center text-[10px]">
+                      <div className="p-2 sm:p-2.5 rounded-xl border border-slate-100 bg-slate-50 text-slate-400 min-h-[56px] flex items-center justify-center text-[10px]">
                         -
                       </div>
                     );
@@ -539,26 +488,26 @@ export const CalendarView: React.FC = () => {
       </div>
 
       {/* Daily Scheduled Appointments Ledger & Details Table */}
-      <div className="glass-card p-5 bg-white border-slate-200/80">
-        <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-200">
+      <div className="glass-card p-3.5 sm:p-5 bg-white border-slate-200/80 shadow-sm">
+        <div className="flex items-center justify-between pb-3 mb-3 sm:mb-4 border-b border-slate-200">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-brand-600" />
             <h3 className="text-sm font-bold text-slate-900">
               Scheduled Appointments for {selectedDate} ({appointments.length})
             </h3>
           </div>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-slate-500 font-medium">
             {appointments.filter((a) => a.status === 'SCHEDULED' || a.status === 'CONFIRMED').length} upcoming
           </span>
         </div>
 
         {appointments.length === 0 ? (
-          <div className="text-center py-8 text-slate-400 text-xs">
+          <div className="text-center py-6 sm:py-8 text-slate-400 text-xs">
             No appointments scheduled for {selectedDate}. Click "Book Appointment" or an available slot above to schedule.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[600px]">
               <thead className="text-[11px] text-slate-500 border-b border-slate-200 uppercase tracking-wider bg-slate-50/60">
                 <tr>
                   <th className="py-2.5 px-3 font-bold">Time Slot</th>
@@ -614,8 +563,8 @@ export const CalendarView: React.FC = () => {
 
       {/* Booking Modal */}
       {showBookingModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full glass-card p-6 bg-white border-slate-200 shadow-xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="max-w-lg w-full glass-card p-5 sm:p-6 bg-white border-slate-200 shadow-xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center">
@@ -636,7 +585,7 @@ export const CalendarView: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleCreateAppointment} className="space-y-4 text-xs">
+            <form onSubmit={handleCreateAppointment} className="space-y-3.5 text-xs">
               {/* Date Selection inside modal */}
               <div>
                 <label className="block text-slate-700 font-semibold mb-1">Appointment Date</label>
@@ -695,7 +644,7 @@ export const CalendarView: React.FC = () => {
               </div>
 
               {/* Stylist and Start Time Slot */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 font-semibold mb-1">Stylist / Therapist</label>
                   <select

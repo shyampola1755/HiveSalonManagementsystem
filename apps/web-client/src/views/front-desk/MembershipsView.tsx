@@ -59,23 +59,23 @@ export const MembershipsView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between glass-card p-5 bg-white border-slate-200/80 shadow-sm">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 glass-card p-4 sm:p-5 bg-white border-slate-200/80 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 text-brand-600 border border-amber-200 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-brand-600 border border-amber-200 flex items-center justify-center shrink-0">
             <Gift className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">VIP Memberships & Service Packages</h2>
+            <h2 className="text-base sm:text-lg font-extrabold text-slate-900">VIP Memberships & Service Packages</h2>
             <p className="text-xs text-slate-500">Exclusive privilege tiers, recurring perks, and multi-session service passes</p>
           </div>
         </div>
       </div>
 
       {/* Membership Tiers Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {tiers.map((tier) => (
-          <div key={tier._id} className="glass-card p-6 bg-white border-slate-200/80 flex flex-col justify-between relative overflow-hidden shadow-sm">
+          <div key={tier._id} className="glass-card p-4 sm:p-6 bg-white border-slate-200/80 flex flex-col justify-between relative overflow-hidden shadow-sm">
             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl pointer-events-none"></div>
             <div>
               <div className="flex justify-between items-start">
@@ -83,12 +83,12 @@ export const MembershipsView: React.FC = () => {
                   <h3 className="text-base font-extrabold text-slate-900">{tier.name}</h3>
                   <div className="text-xs text-brand-700 font-bold mt-0.5">{tier.validityDays} Days Validity</div>
                 </div>
-                <div className="text-2xl font-black text-slate-900">₹{tier.price?.toLocaleString('en-IN')}</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900">₹{tier.price?.toLocaleString('en-IN')}</div>
               </div>
 
               <div className="mt-4 space-y-2 border-t border-slate-200 pt-4 text-xs text-slate-600">
                 <div className="flex items-center gap-2 text-emerald-700 font-semibold">
-                  <CheckCircle2 className="w-4 h-4" /> {tier.discountPercentage}% Discount on all services
+                  <CheckCircle2 className="w-4 h-4 shrink-0" /> {tier.discountPercentage}% Discount on all services
                 </div>
                 {tier.perks?.map((perk: string, idx: number) => (
                   <div key={idx} className="flex items-center gap-2 text-slate-700">
@@ -103,7 +103,7 @@ export const MembershipsView: React.FC = () => {
                 setSelectedTier(tier);
                 setShowSellModal(true);
               }}
-              className="btn-gold w-full mt-6 py-2.5 text-xs font-bold shadow-sm"
+              className="btn-gold w-full mt-5 sm:mt-6 py-2.5 text-xs font-bold shadow-sm"
             >
               Sell Membership to Client
             </button>
@@ -113,8 +113,8 @@ export const MembershipsView: React.FC = () => {
 
       {/* Sell Modal */}
       {showSellModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full glass-card p-6 bg-white border-slate-200 shadow-xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="max-w-md w-full glass-card p-5 sm:p-6 bg-white border-slate-200 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
               <h3 className="text-sm font-bold text-slate-900">Enroll in {selectedTier?.name}</h3>
               <button onClick={() => setShowSellModal(false)} className="text-slate-400 hover:text-slate-700">

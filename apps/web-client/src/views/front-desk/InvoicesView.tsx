@@ -30,14 +30,14 @@ export const InvoicesView: React.FC = () => {
   }, [activeBranchId]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between glass-card p-5 bg-white border-slate-200/80 shadow-sm">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 glass-card p-4 sm:p-5 bg-white border-slate-200/80 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 text-brand-600 border border-amber-200 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-brand-600 border border-amber-200 flex items-center justify-center shrink-0">
             <Receipt className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">POS Invoices & Tax Receipts</h2>
+            <h2 className="text-base sm:text-lg font-extrabold text-slate-900">POS Invoices & Tax Receipts</h2>
             <p className="text-xs text-slate-500">Complete transaction history, billing audit, and GST invoice records</p>
           </div>
         </div>
@@ -45,45 +45,53 @@ export const InvoicesView: React.FC = () => {
 
       <div className="glass-card overflow-hidden bg-white border-slate-200/80 shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700">
+          <table className="w-full text-left text-xs text-slate-700 min-w-[650px]">
             <thead className="bg-slate-50 text-slate-600 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
               <tr>
-                <th className="p-4">Invoice #</th>
-                <th className="p-4">Customer</th>
-                <th className="p-4">Items Summary</th>
-                <th className="p-4">Total Amount</th>
-                <th className="p-4">Payment Method</th>
-                <th className="p-4">Date & Time</th>
-                <th className="p-4 text-right">Actions</th>
+                <th className="p-3 sm:p-4">Invoice #</th>
+                <th className="p-3 sm:p-4">Customer</th>
+                <th className="p-3 sm:p-4">Items Summary</th>
+                <th className="p-3 sm:p-4">Total Amount</th>
+                <th className="p-3 sm:p-4">Payment Method</th>
+                <th className="p-3 sm:p-4">Date & Time</th>
+                <th className="p-3 sm:p-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {invoices.map((inv) => (
-                <tr key={inv._id} className="hover:bg-slate-50 transition-colors">
-                  <td className="p-4 font-mono font-bold text-brand-700">{inv.invoiceNumber}</td>
-                  <td className="p-4">
-                    <div className="font-bold text-slate-900">{inv.customerName}</div>
-                    <div className="text-[11px] text-slate-500">{inv.customerPhone}</div>
-                  </td>
-                  <td className="p-4">
-                    <div className="line-clamp-1 text-slate-800">{inv.items?.map((i: any) => i.name).join(', ')}</div>
-                    <div className="text-[10px] text-slate-400">{inv.items?.length} items</div>
-                  </td>
-                  <td className="p-4 font-bold text-slate-900 text-sm">₹{inv.totalAmount?.toLocaleString('en-IN')}</td>
-                  <td className="p-4">
-                    <span className="badge-emerald text-[10px]">{inv.payments?.[0]?.method || 'PAID'}</span>
-                  </td>
-                  <td className="p-4 text-slate-500">{new Date(inv.createdAt).toLocaleString()}</td>
-                  <td className="p-4 text-right">
-                    <button
-                      onClick={() => setSelectedInvoice(inv)}
-                      className="btn-secondary py-1.5 px-3 text-xs"
-                    >
-                      <Eye className="w-3.5 h-3.5" /> View Receipt
-                    </button>
+              {invoices.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-slate-400">
+                    No POS invoices recorded yet.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                invoices.map((inv) => (
+                  <tr key={inv._id || inv.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="p-3 sm:p-4 font-mono font-bold text-brand-700">{inv.invoiceNumber}</td>
+                    <td className="p-3 sm:p-4">
+                      <div className="font-bold text-slate-900">{inv.customerName}</div>
+                      <div className="text-[11px] text-slate-500">{inv.customerPhone}</div>
+                    </td>
+                    <td className="p-3 sm:p-4">
+                      <div className="line-clamp-1 text-slate-800">{inv.items?.map((i: any) => i.name).join(', ')}</div>
+                      <div className="text-[10px] text-slate-400">{inv.items?.length} items</div>
+                    </td>
+                    <td className="p-3 sm:p-4 font-bold text-slate-900 text-sm">₹{inv.totalAmount?.toLocaleString('en-IN')}</td>
+                    <td className="p-3 sm:p-4">
+                      <span className="badge-emerald text-[10px]">{inv.payments?.[0]?.method || 'PAID'}</span>
+                    </td>
+                    <td className="p-3 sm:p-4 text-slate-500 whitespace-nowrap">{new Date(inv.createdAt).toLocaleString()}</td>
+                    <td className="p-3 sm:p-4 text-right">
+                      <button
+                        onClick={() => setSelectedInvoice(inv)}
+                        className="btn-secondary py-1.5 px-3 text-xs"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> View
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -91,8 +99,8 @@ export const InvoicesView: React.FC = () => {
 
       {/* View/Print Invoice Receipt Modal */}
       {selectedInvoice && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full glass-card p-6 bg-white border-slate-200 shadow-xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="max-w-md w-full glass-card p-5 sm:p-6 bg-white border-slate-200 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <Receipt className="w-4 h-4 text-brand-600" /> Tax Receipt #{selectedInvoice.invoiceNumber}
