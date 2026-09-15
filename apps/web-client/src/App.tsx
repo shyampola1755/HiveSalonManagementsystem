@@ -53,6 +53,8 @@ export const App: React.FC = () => {
   return (
     <Routes>
       <Route path="/login" element={!token ? <LoginView /> : <Navigate to={getDefaultRoute()} />} />
+      <Route path="/pos-login" element={!token ? <LoginView /> : <Navigate to="/front-desk/pos" />} />
+      <Route path="/pos" element={token ? <Navigate to="/front-desk/pos" /> : <Navigate to="/pos-login" />} />
 
       {/* Protected Routes inside AppShell */}
       <Route element={token ? <AppShell /> : <Navigate to="/login" />}>

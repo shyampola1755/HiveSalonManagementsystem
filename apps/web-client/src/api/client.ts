@@ -201,6 +201,9 @@ const INITIAL_APPOINTMENTS = [
   { _id: 'app-1', branchId: 'hyd-01', customerName: 'Aarav Singhania', customerPhone: '+91 98765 43210', serviceName: 'French Balayage & Glossing', staffName: 'Vikram Mehta', appointmentDate: new Date().toISOString().split('T')[0], startTime: '10:00', endTime: '12:00', status: 'IN_SERVICE', totalPrice: 6500 },
   { _id: 'app-2', branchId: 'mum-01', customerName: 'Deepika Padukone', customerPhone: '+91 98222 11334', serviceName: 'HydraFacial MD Platinum', staffName: 'Sara Khan', appointmentDate: new Date().toISOString().split('T')[0], startTime: '12:30', endTime: '13:30', status: 'CHECKED_IN', totalPrice: 5500 },
   { _id: 'app-3', branchId: 'blr-01', customerName: 'Rohan Mehra', customerPhone: '+91 91234 56789', serviceName: 'Precision Director Haircut', staffName: 'Rahul Verma', appointmentDate: new Date().toISOString().split('T')[0], startTime: '14:00', endTime: '14:45', status: 'SCHEDULED', totalPrice: 1500 },
+  { _id: 'app-shyam-1', branchId: 'hyd-01', customerName: 'shyam', customerPhone: '9630852147', serviceName: 'Signature Luxe Haircut & Blowdry', staffName: 'Vikram Mehta', appointmentDate: new Date().toISOString().split('T')[0], startTime: '13:00', endTime: '13:45', status: 'COMPLETED', totalPrice: 1800, invoiceId: 'inv-shyam-1' },
+  { _id: 'app-shyam-2', branchId: 'hyd-01', customerName: 'shyam', customerPhone: '9630852147', serviceName: 'French Balayage & Glossing', staffName: 'Vikram Mehta', appointmentDate: new Date().toISOString().split('T')[0], startTime: '17:00', endTime: '19:00', status: 'COMPLETED', totalPrice: 6500, invoiceId: 'inv-shyam-2' },
+  { _id: 'app-shyam-3', branchId: 'hyd-01', customerName: 'shyam', customerPhone: '9630852147', serviceName: 'Signature Luxe Haircut & Blowdry', staffName: 'Vikram Mehta', appointmentDate: new Date().toISOString().split('T')[0], startTime: '19:00', endTime: '19:45', status: 'COMPLETED', totalPrice: 1800, invoiceId: 'inv-shyam-3' },
 ];
 
 const INITIAL_ORDERS = [
@@ -209,6 +212,57 @@ const INITIAL_ORDERS = [
 ];
 
 const INITIAL_INVOICES = [
+  {
+    _id: 'inv-shyam-1',
+    id: 'inv-shyam-1',
+    branchId: 'hyd-01',
+    branchName: 'Hyderabad Flagship (Banjara Hills)',
+    invoiceNumber: 'INV-HYD-HYD-01-242362',
+    customerName: 'shyam',
+    customerPhone: '9630852147',
+    totalAmount: 2124,
+    subtotal: 1800,
+    taxAmount: 324,
+    discountAmount: 0,
+    paymentStatus: 'PAID',
+    payments: [{ method: 'CASH', amount: 2124 }],
+    items: [{ name: 'Signature Luxe Haircut & Blowdry', itemType: 'SERVICE', quantity: 1, unitPrice: 1800, commissionAmount: 360, staffName: 'Vikram Mehta' }],
+    createdAt: new Date().toISOString(),
+  },
+  {
+    _id: 'inv-shyam-2',
+    id: 'inv-shyam-2',
+    branchId: 'hyd-01',
+    branchName: 'Hyderabad Flagship (Banjara Hills)',
+    invoiceNumber: 'INV-HYD-HYD-01-937101',
+    customerName: 'shyam',
+    customerPhone: '9630852147',
+    totalAmount: 7670,
+    subtotal: 6500,
+    taxAmount: 1170,
+    discountAmount: 0,
+    paymentStatus: 'PAID',
+    payments: [{ method: 'CASH', amount: 7670 }],
+    items: [{ name: 'French Balayage & Glossing', itemType: 'SERVICE', quantity: 1, unitPrice: 6500, commissionAmount: 1300, staffName: 'Vikram Mehta' }],
+    createdAt: new Date().toISOString(),
+  },
+  {
+    _id: 'inv-shyam-3',
+    id: 'inv-shyam-3',
+    branchId: 'hyd-01',
+    branchName: 'Hyderabad Flagship (Banjara Hills)',
+    invoiceNumber: 'INV-HYD-HYD-01-075419',
+    customerName: 'shyam',
+    customerPhone: '9630852147',
+    totalAmount: 2124,
+    subtotal: 1800,
+    taxAmount: 324,
+    discountAmount: 0,
+    paymentStatus: 'PAID',
+    payments: [{ method: 'CASH', amount: 2124 }],
+    items: [{ name: 'Signature Luxe Haircut & Blowdry', itemType: 'SERVICE', quantity: 1, unitPrice: 1800, commissionAmount: 360, staffName: 'Vikram Mehta' }],
+    createdAt: new Date().toISOString(),
+  },
   {
     _id: 'inv-1',
     id: 'inv-1',
@@ -738,7 +792,13 @@ const handleMockFallback = async (config: any): Promise<any> => {
       // PUT /appointments/:id or PUT /appointments/:id/status
       if (method === 'put') {
         const body = config.data ? (typeof config.data === 'string' ? JSON.parse(config.data) : config.data) : {};
-        const updated = appts.map((a: any) => (url.includes(a._id) || (a.id && url.includes(a.id)) ? { ...a, ...body } : a));
+        const updated = appts.map((a: any) => {
+          if (url.includes(a._id) || (a.id && url.includes(a.id))) {
+            const isCompleted = body.status === 'COMPLETED';
+            return { ...a, ...body, ...(isCompleted ? { completedAt: a.completedAt || new Date().toISOString() } : {}) };
+          }
+          return a;
+        });
         saveStorageList('appointments', updated);
         return { status: 200, data: { success: true, message: 'Appointment updated successfully' } };
       }
@@ -910,7 +970,10 @@ const handleMockFallback = async (config: any): Promise<any> => {
         customerId: body.customerId || foundCust?._id,
         customerName: body.customerName || foundCust?.fullName || 'Walk-in Client',
         customerPhone: body.customerPhone || foundCust?.phone || '+91 98765 43210',
-        items: body.items || [],
+        items: (body.items || []).map((i: any) => ({
+          ...i,
+          commissionAmount: i.commissionAmount !== undefined ? i.commissionAmount : (i.itemType === 'PRODUCT' ? Math.round((Number(i.unitPrice) || 0) * (Number(i.quantity) || 1) * 0.1) : Math.round((Number(i.unitPrice) || 0) * (Number(i.quantity) || 1) * 0.2)),
+        })),
         subtotal,
         taxAmount,
         discountAmount,
@@ -952,11 +1015,14 @@ const handleMockFallback = async (config: any): Promise<any> => {
         const matchesCust = targetCustId && aCustId === targetCustId;
         const matchesName = targetCustName && (a.customerName || '').toLowerCase() === targetCustName;
         if (matchesAppt || ((matchesCust || matchesName) && ['IN_SERVICE', 'CHECKED_IN', 'SCHEDULED', 'CONFIRMED'].includes(a.status))) {
+          const primaryItem = (body.items || []).find((it: any) => it.itemType !== 'PRODUCT') || (body.items || [])[0];
           return {
             ...a,
             status: 'COMPLETED',
             invoiceId: newInvoice._id,
             completedAt: new Date().toISOString(),
+            serviceName: primaryItem?.name || a.serviceName,
+            totalPrice: Number(primaryItem?.unitPrice) * (Number(primaryItem?.quantity) || 1) || subtotal || a.totalPrice,
           };
         }
         return a;

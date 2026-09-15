@@ -5,6 +5,7 @@ import { Appointment } from '../models/Appointment';
 import { Customer } from '../models/Customer';
 import { Service } from '../models/Service';
 import { StaffProfile } from '../models/Staff';
+import { Branch } from '../models/Branch';
 import { AuthRequest } from '../middleware/auth';
 
 // @desc    Get appointments for a branch/date range
@@ -255,20 +256,30 @@ export const createAppointment = asyncHandler(async (req: AuthRequest, res: Resp
 // @desc    Update appointment status (CHECKED_IN, IN_SERVICE, COMPLETED, CANCELLED, NO_SHOW)
 // @route   PUT /api/v1/appointments/:id/status
 export const updateAppointmentStatus = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { status, cancelledReason } = req.body;
+  const { status, cancelledReason, serviceName, serviceId, totalPrice, invoiceId, staffName, staffId } = req.body;
   const targetId = req.params.id;
+
+  const updateFields: any = {};
+  if (status !== undefined) updateFields.status = status;
+  if (cancelledReason !== undefined) updateFields.cancelledReason = cancelledReason;
+  if (serviceName !== undefined) updateFields.serviceName = serviceName;
+  if (serviceId !== undefined) updateFields.serviceId = serviceId;
+  if (totalPrice !== undefined) updateFields.totalPrice = totalPrice;
+  if (invoiceId !== undefined) updateFields.invoiceId = invoiceId;
+  if (staffName !== undefined) updateFields.staffName = staffName;
+  if (staffId !== undefined) updateFields.staffId = staffId;
 
   let appointment = null;
   if (mongoose.Types.ObjectId.isValid(String(targetId))) {
     appointment = await Appointment.findOneAndUpdate(
       { _id: targetId, organizationId: req.organizationId },
-      { status, cancelledReason },
+      updateFields,
       { new: true }
     );
   } else {
     appointment = await Appointment.findOneAndUpdate(
       { _id: targetId },
-      { status, cancelledReason },
+      updateFields,
       { new: true }
     );
   }
@@ -277,10 +288,10 @@ export const updateAppointmentStatus = asyncHandler(async (req: AuthRequest, res
     // If exact ID not found, attempt update on active appointment in organization
     appointment = await Appointment.findOneAndUpdate(
       { organizationId: req.organizationId, status: { $in: ['IN_SERVICE', 'CHECKED_IN', 'SCHEDULED', 'CONFIRMED'] } },
-      { status, cancelledReason },
+      updateFields,
       { new: true }
     );
   }
 
-  res.json({ success: true, data: appointment || { _id: targetId, status } });
+  res.json({ success: true, data: appointment || { _id: targetId, ...updateFields } });
 });

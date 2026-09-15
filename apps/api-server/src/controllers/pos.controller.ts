@@ -123,7 +123,7 @@ export const processCheckout = asyncHandler(async (req: AuthRequest, res: Respon
       totalAmount: total,
       staffId: item.staffId,
       staffName: item.staffName,
-      commissionAmount: item.commissionAmount || 0,
+      commissionAmount: item.commissionAmount !== undefined ? item.commissionAmount : (item.itemType === 'PRODUCT' ? Math.round(total * 0.1) : Math.round(total * 0.2)),
     };
   });
 
@@ -189,19 +189,19 @@ export const processCheckout = asyncHandler(async (req: AuthRequest, res: Respon
   customer.loyaltyPoints = (customer.loyaltyPoints || 0) + earnedPoints;
   await customer.save();
 
-  // If appointment was attached or customer has active appointments, mark them completed
-  if (appointmentId) {
-    if (mongoose.Types.ObjectId.isValid(String(appointmentId))) {
-      await Appointment.findByIdAndUpdate(appointmentId, {
-        status: 'COMPLETED',
-        invoiceId: invoice._id,
-      });
-    } else {
-      await Appointment.updateMany(
-        { _id: appointmentId },
-        { status: 'COMPLETED', invoiceId: invoice._id }
-      );
+  // If appointment was attached or customer has active appointments, mark them completed and sync billed service details
+  const primaryService = processedItems.find((it: any) => it.itemType !== 'PRODUCT') || processedItems[0];
+  const apptUpdates: any = {
+    status: 'COMPLETED',
+    invoiceId: invoice._id,
+  };
+  if (primaryService) {
+    if (primaryService.name) apptUpdates.serviceName = primaryService.name;
+    if (primaryService.itemId && mongoose.Types.ObjectId.isValid(String(primaryService.itemId))) {
+      apptUpdates.serviceId = primaryService.itemId;
     }
+    const itemTotal = Number(primaryService.unitPrice) * (Number(primaryService.quantity) || 1);
+    if (itemTotal > 0) apptUpdates.totalPrice = itemTotal;
   }
 
   const matchConditions: any[] = [];
@@ -210,18 +210,46 @@ export const processCheckout = asyncHandler(async (req: AuthRequest, res: Respon
   if (req.body.customerName) matchConditions.push({ customerName: req.body.customerName });
   if (customer?.phone) matchConditions.push({ customerPhone: customer.phone });
 
-  if (matchConditions.length > 0) {
-    await Appointment.updateMany(
-      {
+  if (appointmentId) {
+    if (mongoose.Types.ObjectId.isValid(String(appointmentId))) {
+      await Appointment.findByIdAndUpdate(appointmentId, apptUpdates);
+    } else {
+      await Appointment.updateMany(
+        { _id: appointmentId },
+        apptUpdates
+      );
+    }
+  } else if (matchConditions.length > 0) {
+    // Only update ONE active appointment that best matches this service or the earliest in-chair/in-service slot
+    let matchedAppt = null;
+    const serviceFilter: any[] = [];
+    if (primaryService?.name) serviceFilter.push({ serviceName: primaryService.name });
+    if (primaryService?.itemId && mongoose.Types.ObjectId.isValid(String(primaryService.itemId))) {
+      serviceFilter.push({ serviceId: primaryService.itemId });
+    }
+
+    if (serviceFilter.length > 0) {
+      matchedAppt = await Appointment.findOne({
+        organizationId: req.organizationId,
+        status: { $in: ['IN_SERVICE', 'CHECKED_IN', 'SCHEDULED', 'CONFIRMED'] },
+        $and: [
+          { $or: matchConditions },
+          { $or: serviceFilter }
+        ]
+      }).sort({ appointmentDate: 1, startTime: 1 });
+    }
+
+    if (!matchedAppt) {
+      matchedAppt = await Appointment.findOne({
         organizationId: req.organizationId,
         $or: matchConditions,
         status: { $in: ['IN_SERVICE', 'CHECKED_IN', 'SCHEDULED', 'CONFIRMED'] },
-      },
-      {
-        status: 'COMPLETED',
-        invoiceId: invoice._id,
-      }
-    );
+      }).sort({ status: -1, appointmentDate: 1, startTime: 1 });
+    }
+
+    if (matchedAppt) {
+      await Appointment.findByIdAndUpdate(matchedAppt._id, apptUpdates);
+    }
   }
 
   // Deduct stock for product items sold

@@ -12,6 +12,7 @@
     "dev:server": "npm run --workspace=@hive/api-server dev",
     "dev:client": "npm run --workspace=@hive/web-client dev",
     "build": "turbo run build",
+    "build:apk": "node scripts/build-pos-apk.mjs",
     "type-check": "turbo run type-check",
     "seed": "npm run --workspace=@hive/api-server seed",
     "lint": "turbo run lint",

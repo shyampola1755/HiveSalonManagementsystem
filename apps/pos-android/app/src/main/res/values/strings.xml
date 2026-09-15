@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Hive POS</string>
+    <string name="pos_url">https://hive-salon-neon.vercel.app/pos-login?mode=pos</string>
+    <string name="offline_title">Offline Mode</string>
+    <string name="offline_message">No internet connection. Please check Wi-Fi / Mobile Data to sync POS billing.</string>
+    <string name="retry_btn">Retry Connection</string>
+</resources>

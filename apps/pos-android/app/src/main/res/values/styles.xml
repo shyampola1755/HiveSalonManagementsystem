@@ -1,0 +1,11 @@
+<resources>
+    <style name="Theme.HivePOS" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/brand_gold</item>
+        <item name="colorPrimaryVariant">@color/brand_gold_dark</item>
+        <item name="colorOnPrimary">@color/slate_900</item>
+        <item name="android:statusBarColor">@color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:windowBackground">@color/brand_bg</item>
+    </style>
+</resources>

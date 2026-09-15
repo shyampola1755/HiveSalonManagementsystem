@@ -75,7 +75,13 @@ const DEMO_PROFILES: Record<string, any> = {
 };
 
 export const LoginView: React.FC = () => {
-  const [email, setEmail] = useState('admin@hivesalon.com');
+  const isPosMode = typeof window !== 'undefined' && (
+    window.location.search.includes('pos') ||
+    window.location.pathname.includes('pos') ||
+    navigator.userAgent.includes('HiveSalonPOS')
+  );
+
+  const [email, setEmail] = useState(isPosMode ? 'frontdesk@hivesalon.com' : 'admin@hivesalon.com');
   const [password, setPassword] = useState('Password123!');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -91,7 +97,7 @@ export const LoginView: React.FC = () => {
       if (res.data && res.data.success) {
         const targetRoute = login(res.data.token, res.data.user);
         showToast(`Welcome back, ${res.data.user.fullName}!`, 'success');
-        navigate(targetRoute);
+        navigate(isPosMode ? '/front-desk/pos' : targetRoute);
         return;
       }
     } catch (err: any) {
@@ -102,7 +108,7 @@ export const LoginView: React.FC = () => {
         const fallbackToken = `demo_session_${demoUser.role.toLowerCase()}_${Date.now()}`;
         const targetRoute = login(fallbackToken, demoUser);
         showToast(`Welcome, ${demoUser.fullName}!`, 'success');
-        navigate(targetRoute);
+        navigate(isPosMode ? '/front-desk/pos' : targetRoute);
         return;
       }
       showToast(err.response?.data?.message || 'Login failed. Please check credentials.', 'error');
@@ -129,10 +135,12 @@ export const LoginView: React.FC = () => {
             H
           </div>
           <h1 className="text-2xl font-black tracking-tight text-slate-900 flex items-center justify-center gap-2">
-            HIVE <span className="text-brand-600 font-semibold">SALON</span>
+            HIVE <span className="text-brand-600 font-semibold">{isPosMode ? 'POS' : 'SALON'}</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1 font-medium">
-            Centralized Multi-Branch Enterprise ERP & POS Platform (MERN)
+            {isPosMode
+              ? 'Counter Checkout Terminal & Cashier Billing'
+              : 'Centralized Multi-Branch Enterprise ERP & POS Platform (MERN)'}
           </p>
         </div>
 
@@ -140,7 +148,7 @@ export const LoginView: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-              Email Address
+              Cashier / Staff Email
             </label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -157,7 +165,7 @@ export const LoginView: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-              Password
+              Terminal Password / PIN
             </label>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -177,7 +185,7 @@ export const LoginView: React.FC = () => {
               <span>Authenticating...</span>
             ) : (
               <>
-                Sign In to Hive ERP <ArrowRight className="w-4 h-4" />
+                {isPosMode ? 'Sign In to POS Terminal' : 'Sign In to Hive ERP'} <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>

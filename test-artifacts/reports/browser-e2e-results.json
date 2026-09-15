@@ -8,8 +8,8 @@
     "actual": "4 Role Buttons Available",
     "severity": "P1",
     "screenshot": "01_login_page_view.png",
-    "durationMs": 3542,
-    "timestamp": "2026-09-11T12:25:32.087Z"
+    "durationMs": 2196,
+    "timestamp": "2026-09-15T07:34:55.232Z"
   },
   {
     "id": "E2E-ADMIN-01",
@@ -20,8 +20,8 @@
     "actual": "Landed and verified Executive BI",
     "severity": "P0",
     "screenshot": "02_super_admin_executive_dashboard.png",
-    "durationMs": 2410,
-    "timestamp": "2026-09-11T12:25:34.497Z"
+    "durationMs": 2118,
+    "timestamp": "2026-09-15T07:34:57.350Z"
   },
   {
     "id": "E2E-ADMIN-02",
@@ -32,8 +32,8 @@
     "actual": "4 Cards Rendered",
     "severity": "P1",
     "screenshot": "03_super_admin_branches_network.png",
-    "durationMs": 2879,
-    "timestamp": "2026-09-11T12:25:37.377Z"
+    "durationMs": 2128,
+    "timestamp": "2026-09-15T07:34:59.478Z"
   },
   {
     "id": "E2E-MGR-01",
@@ -44,8 +44,8 @@
     "actual": "Verified floor KPIs and stylist productivity",
     "severity": "P0",
     "screenshot": "04_branch_manager_floor_hub.png",
-    "durationMs": 3380,
-    "timestamp": "2026-09-11T12:25:41.801Z"
+    "durationMs": 3107,
+    "timestamp": "2026-09-15T07:35:03.598Z"
   },
   {
     "id": "E2E-MGR-02",
@@ -56,8 +56,8 @@
     "actual": "Modal open and interactive",
     "severity": "P1",
     "screenshot": "05_branch_manager_create_staff_modal.png",
-    "durationMs": 3700,
-    "timestamp": "2026-09-11T12:25:45.502Z"
+    "durationMs": 2949,
+    "timestamp": "2026-09-15T07:35:06.548Z"
   },
   {
     "id": "E2E-FD-01",
@@ -68,8 +68,8 @@
     "actual": "Verified Front Desk Hub & RBAC containment",
     "severity": "P0",
     "screenshot": "06_front_desk_operations_hub.png",
-    "durationMs": 3784,
-    "timestamp": "2026-09-11T12:25:50.344Z"
+    "durationMs": 3086,
+    "timestamp": "2026-09-15T07:35:10.648Z"
   },
   {
     "id": "E2E-FD-02",
@@ -80,8 +80,8 @@
     "actual": "CRM 360 active",
     "severity": "P1",
     "screenshot": "07_front_desk_customer_crm_360.png",
-    "durationMs": 2823,
-    "timestamp": "2026-09-11T12:25:53.167Z"
+    "durationMs": 2338,
+    "timestamp": "2026-09-15T07:35:12.986Z"
   },
   {
     "id": "E2E-FD-03",
@@ -92,8 +92,8 @@
     "actual": "Interactive POS touch catalog verified",
     "severity": "P0",
     "screenshot": "08_touch_pos_register.png",
-    "durationMs": 2964,
-    "timestamp": "2026-09-11T12:25:56.132Z"
+    "durationMs": 2437,
+    "timestamp": "2026-09-15T07:35:15.423Z"
   },
   {
     "id": "E2E-STY-01",
@@ -104,8 +104,8 @@
     "actual": "Verified Stylist Station",
     "severity": "P0",
     "screenshot": "09_stylist_station_chair_dashboard.png",
-    "durationMs": 3170,
-    "timestamp": "2026-09-11T12:26:00.346Z"
+    "durationMs": 2838,
+    "timestamp": "2026-09-15T07:35:19.281Z"
   },
   {
     "id": "E2E-STY-02",
@@ -116,8 +116,8 @@
     "actual": "Formula card verified",
     "severity": "P1",
     "screenshot": "10_stylist_hair_color_formulas.png",
-    "durationMs": 960,
-    "timestamp": "2026-09-11T12:26:01.306Z"
+    "durationMs": 934,
+    "timestamp": "2026-09-15T07:35:20.215Z"
   },
   {
     "id": "E2E-STY-03",
@@ -128,8 +128,8 @@
     "actual": "Commission breakdown verified",
     "severity": "P1",
     "screenshot": "11_stylist_commission_payouts.png",
-    "durationMs": 973,
-    "timestamp": "2026-09-11T12:26:02.279Z"
+    "durationMs": 979,
+    "timestamp": "2026-09-15T07:35:21.194Z"
   },
   {
     "id": "E2E-SEC-01",
@@ -140,8 +140,8 @@
     "actual": "Securely redirected to: http://localhost:3000/front-desk/dashboard",
     "severity": "P0",
     "screenshot": "12_rbac_unauthorized_route_redirect.png",
-    "durationMs": 2009,
-    "timestamp": "2026-09-11T12:26:04.288Z"
+    "durationMs": 1909,
+    "timestamp": "2026-09-15T07:35:23.103Z"
   },
   {
     "id": "E2E-RESP-1440",
@@ -152,8 +152,8 @@
     "actual": "Rendered cleanly at 1440x900",
     "severity": "P2",
     "screenshot": "13_desktop_1440x900.png",
-    "durationMs": 1497,
-    "timestamp": "2026-09-11T12:26:05.786Z"
+    "durationMs": 1511,
+    "timestamp": "2026-09-15T07:35:24.614Z"
   },
   {
     "id": "E2E-RESP-1280",
@@ -164,8 +164,8 @@
     "actual": "Rendered cleanly at 1280x720",
     "severity": "P2",
     "screenshot": "14_laptop_1280x720.png",
-    "durationMs": 1599,
-    "timestamp": "2026-09-11T12:26:07.385Z"
+    "durationMs": 1484,
+    "timestamp": "2026-09-15T07:35:26.098Z"
   },
   {
     "id": "E2E-RESP-1024",
@@ -176,8 +176,8 @@
     "actual": "Rendered cleanly at 1024x768",
     "severity": "P2",
     "screenshot": "15_tablet_1024x768.png",
-    "durationMs": 2018,
-    "timestamp": "2026-09-11T12:26:09.404Z"
+    "durationMs": 1556,
+    "timestamp": "2026-09-15T07:35:27.654Z"
   },
   {
     "id": "E2E-RESP-768",
@@ -188,8 +188,8 @@
     "actual": "Rendered cleanly at 768x1024",
     "severity": "P2",
     "screenshot": "16_portrait_tablet_768x1024.png",
-    "durationMs": 2146,
-    "timestamp": "2026-09-11T12:26:11.550Z"
+    "durationMs": 1744,
+    "timestamp": "2026-09-15T07:35:29.398Z"
   },
   {
     "id": "E2E-RESP-390",
@@ -200,7 +200,7 @@
     "actual": "Rendered cleanly at 390x844",
     "severity": "P2",
     "screenshot": "17_mobile_390x844.png",
-    "durationMs": 1856,
-    "timestamp": "2026-09-11T12:26:13.407Z"
+    "durationMs": 1448,
+    "timestamp": "2026-09-15T07:35:30.847Z"
   }
 ]

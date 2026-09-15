@@ -98,7 +98,6 @@ export const PosView: React.FC = () => {
           itemType: 'SERVICE',
           itemId: svcId,
           name: svcName,
-          quantity: 1,
           unitPrice: price,
           taxRate: 18,
           staffId: app.staffId?._id || app.staffId?.id || app.staffId,
@@ -110,6 +109,7 @@ export const PosView: React.FC = () => {
 
   // Checkout Modal State
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [showMobileCartModal, setShowMobileCartModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI' | 'WALLET' | 'SPLIT'>('UPI');
   const [isProcessing, setIsProcessing] = useState(false);
   const [completedInvoice, setCompletedInvoice] = useState<any>(null);
@@ -212,6 +212,7 @@ export const PosView: React.FC = () => {
           taxRate: i.taxRate || 18,
           staffId: i.staffId,
           staffName: i.staffName,
+          commissionAmount: (i as any).commissionAmount !== undefined ? (i as any).commissionAmount : (i.itemType === 'PRODUCT' ? Math.round(i.unitPrice * i.quantity * 0.1) : Math.round(i.unitPrice * i.quantity * 0.2)),
         })),
         subtotal,
         discountAmount,
@@ -252,7 +253,7 @@ export const PosView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col xl:flex-row gap-4 sm:gap-6 min-h-[calc(100vh-8rem)] xl:h-[calc(100vh-6.5rem)]">
+    <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 min-h-[calc(100vh-8rem)] lg:h-[calc(100vh-6.5rem)]">
       {/* Left: Item Catalog & Touch Grid */}
       <div className="flex-1 flex flex-col glass-card p-3.5 sm:p-5 min-w-0 bg-white border-slate-200/80 shadow-sm overflow-hidden">
         {/* Top Controls: Tabs & Search */}
@@ -372,7 +373,7 @@ export const PosView: React.FC = () => {
       </div>
 
       {/* Right: Real-time Cart & Checkout Panel */}
-      <div id="pos-cart-section" className="w-full xl:w-96 glass-card p-4 sm:p-5 flex flex-col justify-between shrink-0 bg-white border-slate-200/80 shadow-sm scroll-mt-20">
+      <div id="pos-cart-section" className="w-full lg:w-80 xl:w-96 glass-card p-4 sm:p-5 flex flex-col justify-between shrink-0 bg-white border-slate-200/80 shadow-sm scroll-mt-20">
         <div>
           {/* Cart Header */}
           <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200">
@@ -492,7 +493,14 @@ export const PosView: React.FC = () => {
 
           <button
             disabled={items.length === 0}
-            onClick={() => setShowCheckoutModal(true)}
+            onClick={() => {
+              if (!customer) {
+                showToast('Please attach a customer first to collect payment', 'error');
+                setShowCustomerModal(true);
+                return;
+              }
+              setShowCheckoutModal(true);
+            }}
             className="btn-gold w-full py-2.5 sm:py-3 mt-1.5 sm:mt-2 font-extrabold text-xs sm:text-sm shadow-sm"
           >
             <CreditCard className="w-4 h-4" /> Collect Payment & Bill
@@ -500,43 +508,253 @@ export const PosView: React.FC = () => {
         </div>
       </div>
 
-      {/* Floating Cart Quick Bar for Mobile & Tablet (< xl) */}
+      {/* Floating Cart Quick Bar for Mobile & Tablet (< lg) */}
       {items.length > 0 && (
-        <div className="xl:hidden fixed bottom-16 sm:bottom-18 left-3 right-3 sm:left-6 sm:right-6 z-20 bg-slate-900/95 text-white p-3 sm:p-3.5 rounded-2xl shadow-2xl flex items-center justify-between backdrop-blur-md border border-slate-800 animate-in fade-in slide-in-from-bottom-2 duration-200">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-brand-500 text-slate-950 font-black flex items-center justify-center text-xs shrink-0 shadow-sm">
+        <div className="lg:hidden fixed bottom-16 sm:bottom-18 left-3 right-3 sm:left-6 sm:right-6 z-40 bg-slate-900/95 text-white p-3 sm:p-3.5 rounded-2xl shadow-2xl flex items-center justify-between backdrop-blur-md border border-slate-800 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div
+            onClick={() => setShowMobileCartModal(true)}
+            className="flex items-center gap-2.5 min-w-0 cursor-pointer flex-1"
+          >
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-brand-500 text-slate-950 font-black flex items-center justify-center text-xs shrink-0 shadow-sm">
               {items.length}
             </div>
             <div className="min-w-0">
               <div className="text-xs font-bold text-white truncate">
                 Bill: ₹{grandTotal.toLocaleString('en-IN')}
               </div>
-              <div className="text-[10px] text-slate-400 truncate">
-                {customer ? customer.fullName : 'Customer pending'}
+              <div className="text-[11px] truncate flex items-center gap-1">
+                {customer ? (
+                  <span className="text-slate-300">👤 {customer.fullName}</span>
+                ) : (
+                  <span className="text-amber-400 font-medium">⚠️ Customer pending</span>
+                )}
               </div>
             </div>
           </div>
           <button
-            onClick={() => {
+            id="btn-floating-review-pay"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              const main = document.querySelector('main');
               const cartEl = document.getElementById('pos-cart-section');
-              if (cartEl) cartEl.scrollIntoView({ behavior: 'smooth' });
+              if (main && cartEl) {
+                main.scrollTo({ top: cartEl.offsetTop, behavior: 'smooth' });
+              }
+              setShowMobileCartModal(true);
             }}
-            className="btn-gold text-xs px-3.5 py-1.5 sm:py-2 font-bold shrink-0 ml-2"
+            className="btn-gold text-xs px-3.5 py-2 sm:px-4 sm:py-2 font-extrabold shrink-0 ml-2 shadow-md active:scale-95 transition-transform"
           >
             Review & Pay
           </button>
         </div>
       )}
 
+      {/* Mobile & Tablet Review & Pay Drawer / Modal */}
+      {showMobileCartModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
+          <div className="w-full sm:max-w-lg glass-card bg-white border-slate-200 shadow-2xl rounded-t-3xl sm:rounded-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200">
+            {/* Modal Header */}
+            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-brand-500/20 text-brand-700 flex items-center justify-center font-bold">
+                  <ShoppingBag className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Review Bill & Items</h3>
+                  <p className="text-[11px] text-slate-500">{items.length} item{items.length > 1 ? 's' : ''} in cart</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {items.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearCart}
+                    className="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1 rounded-lg hover:bg-rose-50"
+                  >
+                    Clear All
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowMobileCartModal(false)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                  aria-label="Close review modal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body - Scrollable */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
+              {/* Customer Attachment Banner */}
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Client / Customer Details
+                </label>
+                {customer ? (
+                  <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-amber-500 text-white font-bold flex items-center justify-center text-xs shadow-sm">
+                        {customer.fullName.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="font-bold text-xs text-slate-900">{customer.fullName}</div>
+                        <div className="text-[11px] text-slate-600">{customer.phone}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        id="btn-modal-change-customer"
+                        type="button"
+                        onClick={() => setShowCustomerModal(true)}
+                        className="text-xs text-brand-700 hover:underline font-semibold"
+                      >
+                        Change
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCustomer(null)}
+                        className="p-1 text-slate-400 hover:text-rose-600"
+                        title="Remove customer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    id="btn-modal-attach-customer"
+                    type="button"
+                    onClick={() => setShowCustomerModal(true)}
+                    className="w-full py-3 px-4 rounded-2xl border-2 border-dashed border-amber-300 hover:border-brand-500 bg-amber-50/50 hover:bg-amber-50 text-xs font-bold text-amber-900 flex items-center justify-center gap-2 transition-all shadow-sm"
+                  >
+                    <User className="w-4 h-4 text-brand-600" />
+                    + Attach Customer (Required for GST Invoice)
+                  </button>
+                )}
+              </div>
+
+              {/* Items List */}
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Order Items
+                </label>
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {items.map((item) => (
+                    <div key={item.id} className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs shadow-sm">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="font-bold text-slate-900 line-clamp-1">{item.name}</span>
+                          <span className="text-[11px] text-slate-500">₹{item.unitPrice} each</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeItem(item.id)}
+                          className="text-slate-400 hover:text-rose-600 p-1"
+                          title="Remove item"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-200/80">
+                        <div className="flex items-center gap-2 bg-white px-2 py-1 rounded-xl border border-slate-200">
+                          <button
+                            type="button"
+                            onClick={() => updateItemQuantity(item.id, item.quantity - 1)}
+                            className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-800 font-bold active:scale-95"
+                          >
+                            -
+                          </button>
+                          <span className="font-bold text-slate-900 min-w-[20px] text-center">{item.quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
+                            className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-800 font-bold active:scale-95"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <span className="font-extrabold text-sm text-brand-700">₹{(item.quantity * item.unitPrice).toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Totals Breakdown */}
+              <div className="pt-2 border-t border-slate-200 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-600">
+                  <span>Subtotal</span>
+                  <span className="font-semibold text-slate-900">₹{subtotal.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600">
+                  <span>Discount</span>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      min="0"
+                      value={discountValue || ''}
+                      onChange={(e) => setDiscount(discountType, Number(e.target.value))}
+                      placeholder="0"
+                      className="w-20 bg-white border border-slate-300 rounded-lg px-2 py-1 text-right text-xs text-brand-700 font-bold"
+                    />
+                    <span className="text-slate-400">₹</span>
+                  </div>
+                </div>
+                <div className="flex justify-between text-slate-600">
+                  <span>GST (18% inclusive)</span>
+                  <span className="font-semibold text-slate-900">₹{Math.round(taxAmount).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2.5 border-t border-slate-200">
+                  <span className="text-sm font-black text-slate-900">Grand Total</span>
+                  <span className="text-2xl font-black text-brand-700">₹{grandTotal.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 shrink-0 space-y-2">
+              <button
+                id="btn-modal-collect-payment"
+                type="button"
+                onClick={() => {
+                  if (!customer) {
+                    showToast('Please attach a customer first to collect payment', 'error');
+                    setShowCustomerModal(true);
+                    return;
+                  }
+                  setShowMobileCartModal(false);
+                  setShowCheckoutModal(true);
+                }}
+                className="btn-gold w-full py-3.5 font-black text-sm shadow-lg flex items-center justify-center gap-2"
+              >
+                <CreditCard className="w-4 h-4" />
+                {customer ? 'Collect Payment & Bill' : 'Attach Customer & Pay'}
+              </button>
+              <button
+                id="btn-modal-keep-adding"
+                type="button"
+                onClick={() => setShowMobileCartModal(false)}
+                className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-800"
+              >
+                Keep Adding Items
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Attach Customer Modal */}
       {showCustomerModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="max-w-md w-full glass-card p-5 sm:p-6 bg-white border-slate-200 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[60] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="max-w-md w-full glass-card p-5 sm:p-6 bg-white border-slate-200 shadow-2xl max-h-[90vh] overflow-y-auto rounded-2xl animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <User className="w-4 h-4 text-brand-600" /> Select / Search Customer
               </h3>
-              <button onClick={() => setShowCustomerModal(false)} className="text-slate-400 hover:text-slate-700">
+              <button onClick={() => setShowCustomerModal(false)} className="text-slate-400 hover:text-slate-700 p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -552,22 +770,28 @@ export const PosView: React.FC = () => {
               />
             </div>
 
-            <div className="max-h-60 overflow-y-auto space-y-2">
-              {customersList.map((c) => (
+            <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+              {(customersList.length > 0 ? customersList : [
+                { _id: 'cust-walkin', fullName: 'Walk-in Guest', phone: '+91 98765 43210', walletBalance: 0, loyaltyPoints: 0 },
+                { _id: 'cust-1', fullName: 'Priya Sharma', phone: '+91 98765 43211', walletBalance: 500, loyaltyPoints: 120 },
+                { _id: 'cust-2', fullName: 'Ananya Reddy', phone: '+91 98765 43212', walletBalance: 1200, loyaltyPoints: 350 },
+                { _id: 'cust-3', fullName: 'Rohan Mehra', phone: '+91 98765 43213', walletBalance: 250, loyaltyPoints: 80 }
+              ]).map((c) => (
                 <div
-                  key={c._id}
+                  key={c._id || c.id}
+                  id={`cust-item-${c._id || c.id}`}
                   onClick={() => {
                     setCustomer({
-                      id: c._id,
+                      id: c._id || c.id,
                       fullName: c.fullName,
                       phone: c.phone,
                       email: c.email,
-                      walletBalance: c.walletBalance,
-                      loyaltyPoints: c.loyaltyPoints,
+                      walletBalance: c.walletBalance || 0,
+                      loyaltyPoints: c.loyaltyPoints || 0,
                     });
                     setShowCustomerModal(false);
                   }}
-                  className="p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-500 cursor-pointer flex items-center justify-between transition-colors shadow-sm"
+                  className="p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-brand-500 hover:bg-amber-50/40 cursor-pointer flex items-center justify-between transition-colors shadow-sm"
                 >
                   <div>
                     <div className="font-bold text-xs text-slate-900">{c.fullName}</div>
@@ -586,13 +810,13 @@ export const PosView: React.FC = () => {
 
       {/* Checkout & Split Payment Modal */}
       {showCheckoutModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="max-w-md w-full glass-card p-5 sm:p-6 bg-white border-slate-200 shadow-xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[60] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="max-w-md w-full glass-card p-5 sm:p-6 bg-white border-slate-200 shadow-2xl max-h-[90vh] overflow-y-auto rounded-2xl animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <CreditCard className="w-4 h-4 text-brand-600" /> Payment & Receipt Generation
               </h3>
-              <button onClick={() => setShowCheckoutModal(false)} className="text-slate-400 hover:text-slate-700">
+              <button onClick={() => setShowCheckoutModal(false)} className="text-slate-400 hover:text-slate-700 p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -635,7 +859,7 @@ export const PosView: React.FC = () => {
 
       {/* Invoice Generated Modal */}
       {completedInvoice && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+        <div className="fixed inset-0 z-[70] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
           <div className="max-w-md w-full glass-card p-5 sm:p-6 bg-white border-slate-200 text-center shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto mb-3">
               <CheckCircle2 className="w-6 h-6" />
